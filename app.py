@@ -1,5 +1,5 @@
 # I import the flask module for manage the API
-from flask import Flask,request
+from flask import Flask, request
 
 # I import the werkzeug module to verify the integrity of the filename of the file
 from werkzeug.utils import secure_filename 
