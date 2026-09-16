@@ -2,15 +2,11 @@
 
 Usage :
     python creer_arborescence.py
-    python creer_arborescence.py --sec
 
 Le script crée tous les dossiers directement dans le dossier courant.
 """
 
-from __future__ import annotations
-
-import argparse
-from pathlib import Path
+import os
 
 
 # Ajoutez ici une matière ou un chapitre pour l'inclure automatiquement.
@@ -93,60 +89,25 @@ STRUCTURE = {
 }
 
 
-def construire_chemins(destination: Path) -> list[Path]:
-    """Retourne tous les dossiers à créer, sans modifier le disque."""
-    dossiers = [
-        destination / "matiere",
-    ]
+def make_structure(structure):
+    """Crée l'arborescence à partir du dictionnaire STRUCTURE."""
 
-    for matiere, niveaux in STRUCTURE.items():
-        for niveau, chapitres in niveaux.items():
-            dossier_niveau = destination / "matiere" / matiere / niveau
-            dossiers.append(dossier_niveau)
+    for matiere, specialites in structure.items():
+        for specialite, dossiers in specialites.items():
+            chemin = os.path.join("matiere", matiere, specialite)
 
-            for chapitre in chapitres:
-                dossiers.append(dossier_niveau / chapitre / "fiches")
+            # Crée le dossier et tous ses parents
+            os.makedirs(chemin, exist_ok=True)
 
-    return dossiers
+            # Crée les éventuels sous-dossiers
+            for dossier in dossiers:
+                os.makedirs(
+                    os.path.join(chemin, dossier),
+                    exist_ok=True
+                )
 
-
-def creer_arborescence(destination: Path, afficher_seulement: bool = False) -> None:
-    """Crée les dossiers ou affiche la structure sans la créer."""
-    dossiers = construire_chemins(destination)
-
-    for dossier in dossiers:
-        if afficher_seulement:
-            print(f"[simulation] {dossier}")
-        else:
-            dossier.mkdir(parents=True, exist_ok=True)
-            print(f"[créé ou déjà présent] {dossier}")
-
-
-def lire_arguments() -> argparse.Namespace:
-    """Lit les options de la ligne de commande."""
-    parseur = argparse.ArgumentParser(
-        description=(
-            "Crée la hiérarchie du projet de fiches de révision "
-            "dans le dossier courant."
-        )
-    )
-    parseur.add_argument(
-        "--sec",
-        action="store_true",
-        help="Affiche les dossiers sans les créer.",
-    )
-    return parseur.parse_args()
-
-
-def main() -> None:
-    """Point d'entrée du script."""
-    arguments = lire_arguments()
-
-    # Le dossier courant est utilisé comme racine.
-    destination = Path.cwd()
-
-    creer_arborescence(destination, arguments.sec)
-
+def main():
+    make_structure(STRUCTURE)
 
 if __name__ == "__main__":
-    main()
+    main()
