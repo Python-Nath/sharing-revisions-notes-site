@@ -1,4 +1,6 @@
 # I import the flask module for manage the API
+import re
+
 from flask import Flask, request, send_from_directory
 import os
 import uuid
@@ -9,9 +11,9 @@ from werkzeug.utils import secure_filename
 
 # Initialisation of the API
 app = Flask(__name__)
-UPLOAD_FOLDER = "uploads"
+SAVE_FILES_FOLDER = "saves"
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(SAVE_FILES_FOLDER, exist_ok=True)
 
 def load_json_file(file_path):
 	with open(file_path, "r") as f:
@@ -25,70 +27,66 @@ def save_json_file(file_path, data):
 
 # Here the definition for save the uploaded file
 # @Aloijsjimmyargilenilsfranckgeorge you need to verify in the html code page that all the elements (title, author, desc, file) are completed by the user and to send title, author, desc in json format and that the file is in type file
-@app.route("/upload", methods=['POST'])
-def upload():
+app.route("/upload/<matiere>/<classe>/<specialite>", methods=["POST"])
+def upload_file(matiere, classe, specialite):
+	if "file" not in request.files:
+		return {"error": "No file part"}, 400
 
-	title = request.form.get("titre")
-	desc = request.form.get("desc")
+	if os.path.join(matiere) not in os.listdir("matiere"):
+		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
+
+	if os.path.join(matiere, classe) not in os.listdir(os.path.join("matiere", matiere)):
+		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 400
+
+	if os.path.join(matiere, classe, specialite) not in os.listdir(os.path.join("matiere", matiere, classe)):
+		return {"error": "Invalid specialite", "all": os.listdir(os.path.join("matiere", matiere, classe))}, 400
+	
+	file = request.files["file"]
+	title = request.form.get("title")
 	author = request.form.get("author")
-	path = request.form.get("path")
+	desc = request.form.get("desc")
 
-	file = request.files.get("file")
+	if not title or not author or not desc:
+		return {"error": "Missing title, author, or description"}, 400
 
-	if file is None or file.filename == "":
-		return "No file provided", 400
+	if file.filename == "":
+		return {"error": "No selected file"}, 400
 
-	uuid_str = str(uuid.uuid4())
-	filename = secure_filename(file.filename)
-	path_json = os.path.join(path, "revisons_notes_files", os.path.splitext(filename)[0] + ".json")
+	if file:
+		filename = secure_filename(file.filename)
+		unique_filename = f"{uuid.uuid4()}_{filename}"
+		file_path = os.path.join(SAVE_FILES_FOLDER, unique_filename)
+		file.save(file_path)
 
-	filename = f"{uuid_str}_{filename}"
-	data_json = {
-		"title": title,
-		"desc": desc,
-		"author": author,
-		"path": path,
-		"name": filename,
-		"stars": 0
-	}
-	file.save(os.path.join(UPLOAD_FOLDER, filename))
+		metadata = {
+			"title": title,
+			"author": author,
+			"desc": desc,
+			"filename": unique_filename
+		}
 
-	save_json_file(path_json, data_json)
+		metadata_path = os.path.join(matiere, classe, specialite, f"{unique_filename}.json")
+		save_json_file(metadata_path, metadata)
 
-	return "OK", 200
+		return {"message": "File uploaded successfully", "metadata": metadata}, 200
 
-# @Aloijsjimmyargilenilsfranckgeorge you need to verify in the html code page that the element filename are completed by the user and to send it in json format
-@app.route("/download/<file_id>", methods=['GET'])
-def download(file_id):
-	filename = secure_filename(file_id)
-	
-	check_file = os.path.join(UPLOAD_FOLDER, filename)
-	if not os.path.exists(check_file):
-		return "File not found", 404
-	
-	return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True, download_name=filename.split("_", 1)[1])
+@app.route("/download/<matiere>/<classe>/<specialite>/<filename>", methods=["GET"])
+def download_file(matiere, classe, specialite, filename):
+	json_path = os.path.join(matiere, classe, specialite, filename)
+	if not os.path.exists(json_path):
+		return {"error": "File not found"}, 404
 
-@app.route("/files/info/<file>", methods=['POST'])
-def get_file_info(file):
-	path = request.form.get("path")
-	filename = secure_filename(file)
-	
-	check_file = os.path.join(UPLOAD_FOLDER, filename)
-	if not os.path.exists(check_file):
-		return "File not found", 404
-	
-	path_json = os.path.join(path, "revisons_notes_files", os.path.splitext(filename)[0] + ".json")
-	data_json = load_json_file(path_json)
-	
-	return json.dumps(data_json), 200
+	with open(json_path, "r") as f:
+		metadata = json.load(f)
 
-@app.route("/files", methods=['GET'])
-def list_files():
-	files = []
-	for filename in os.listdir(UPLOAD_FOLDER):
-		if os.path.isfile(os.path.join(UPLOAD_FOLDER, filename)):
-			files.append(filename)
-	return json.dumps(files), 200
+	filename = re.sub(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}_',
+    '',
+    metadata["filename"]
+	)
+	filename = filename[:-5]  # Remove the last 5 characters (".json")
+	file_path = os.path.join(SAVE_FILES_FOLDER, metadata["filename"])
+	return send_from_directory(os.path.dirname(file_path), os.path.basename(file_path), as_attachment=True, download_name=filename)
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=8080, debug=False)
