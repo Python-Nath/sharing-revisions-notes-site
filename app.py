@@ -7,7 +7,7 @@ import json
 from werkzeug.utils import secure_filename 
 
 app = Flask(__name__)
-SAVE_FILES_FOLDER = "saves"
+SAVE_FILES_FOLDER = "uploads"
 
 os.makedirs(SAVE_FILES_FOLDER, exist_ok=True)
 
@@ -139,7 +139,7 @@ def get_matiere():
 
 @app.route("/info/classe/<matiere>", methods=["GET"])
 def get_classe(matiere):
-	if os.path.join(matiere) not in os.listdir("matiere"):
+	if matiere not in os.listdir("matiere"):
 		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 404
 
 	classe_list = os.listdir(os.path.join("matiere", matiere))
@@ -147,10 +147,10 @@ def get_classe(matiere):
 
 @app.route("/info/specialite/<matiere>/<classe>", methods=["GET"])
 def get_specialite(matiere, classe):
-	if os.path.join(matiere) not in os.listdir("matiere"):
+	if matiere not in os.listdir("matiere"):
 		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 404
 
-	if os.path.join(matiere, classe) not in os.listdir(os.path.join("matiere", matiere)):
+	if classe not in os.listdir(os.path.join("matiere", matiere)):
 		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 404
 
 	specialite_list = os.listdir(os.path.join("matiere", matiere, classe))
@@ -158,13 +158,13 @@ def get_specialite(matiere, classe):
 
 @app.route("/info/files/<matiere>/<classe>/<specialite>", methods=["GET"])
 def get_files(matiere, classe, specialite):
-	if os.path.join(matiere) not in os.listdir("matiere"):
+	if matiere not in os.listdir("matiere"):
 		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 404
 
-	if os.path.join(matiere, classe) not in os.listdir(os.path.join("matiere", matiere)):
+	if classe not in os.listdir(os.path.join("matiere", matiere)):
 		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 404
 
-	if os.path.join(matiere, classe, specialite) not in os.listdir(os.path.join("matiere", matiere, classe)):
+	if specialite not in os.listdir(os.path.join("matiere", matiere, classe)):
 		return {"error": "Invalid specialite", "all": os.listdir(os.path.join("matiere", matiere, classe))}, 404
 
 	files_list = os.listdir(os.path.join("matiere", matiere, classe, specialite))
