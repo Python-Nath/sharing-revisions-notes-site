@@ -1,15 +1,11 @@
-# I import the flask module for manage the API
 import re
-
 from flask import Flask, request, send_from_directory
 import os
 import uuid
 import json
 
-# I import the werkzeug module to verify the integrity of the filename of the file
 from werkzeug.utils import secure_filename 
 
-# Initialisation of the API
 app = Flask(__name__)
 SAVE_FILES_FOLDER = "saves"
 
@@ -25,8 +21,6 @@ def save_json_file(file_path, data):
 
 
 
-# Here the definition for save the uploaded file
-# @Aloijsjimmyargilenilsfranckgeorge you need to verify in the html code page that all the elements (title, author, desc, file) are completed by the user and to send title, author, desc in json format and that the file is in type file
 app.route("/upload/<matiere>/<classe>/<specialite>", methods=["POST"])
 def upload_file(matiere, classe, specialite):
 	if "file" not in request.files:
@@ -87,6 +81,30 @@ def download_file(matiere, classe, specialite, filename):
 	filename = filename[:-5]  # Remove the last 5 characters (".json")
 	file_path = os.path.join(SAVE_FILES_FOLDER, metadata["filename"])
 	return send_from_directory(os.path.dirname(file_path), os.path.basename(file_path), as_attachment=True, download_name=filename)
+
+@app.route("/info/matiere", methods=["GET"])
+def get_matiere():
+	matiere_list = os.listdir("matiere")
+	return {"matiere": matiere_list}, 200
+
+@app.route("/info/classe/<matiere>", methods=["GET"])
+def get_classe(matiere):
+	if os.path.join(matiere) not in os.listdir("matiere"):
+		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
+
+	classe_list = os.listdir(os.path.join("matiere", matiere))
+	return {"classe": classe_list}, 200
+
+@app.route("/info/specialite/<matiere>/<classe>", methods=["GET"])
+def get_specialite(matiere, classe):
+	if os.path.join(matiere) not in os.listdir("matiere"):
+		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
+
+	if os.path.join(matiere, classe) not in os.listdir(os.path.join("matiere", matiere)):
+		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 400
+
+	specialite_list = os.listdir(os.path.join("matiere", matiere, classe))
+	return {"specialite": specialite_list}, 200
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=8080, debug=False)
