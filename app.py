@@ -1,64 +1,125 @@
-# I import the flask module for manage the API
+import re
 from flask import Flask, request, send_from_directory
 import os
 import uuid
 import json
 
-# I import the werkzeug module to verify the integrity of the filename of the file
 from werkzeug.utils import secure_filename 
 
-# Initialisation of the API
 app = Flask(__name__)
+SAVE_FILES_FOLDER = "saves"
 
-# Here the definition for save the uploaded file
-# @Aloijsjimmyargilenilsfranckgeorge you need to verify in the html code page that all the elements (title, author, desc, file) are completed by the user and to send title, author, desc in json format and that the file is in type file
-@app.route("/upload", methods=['POST'])
-def upload():
+os.makedirs(SAVE_FILES_FOLDER, exist_ok=True)
+
+def load_json_file(file_path):
+	with open(file_path, "r") as f:
+		return json.load(f)
+
+def save_json_file(file_path, data):
+	with open(file_path, "w") as f:
+		json.dump(data, f, indent=4, ensure_ascii=False)
+
+
+
+app.route("/upload/<matiere>/<classe>/<specialite>", methods=["POST"])
+def upload_file(matiere, classe, specialite):
+	if "file" not in request.files:
+		return {"error": "No file part"}, 400
+
+	if os.path.join(matiere) not in os.listdir("matiere"):
+		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
+
+	if os.path.join(matiere, classe) not in os.listdir(os.path.join("matiere", matiere)):
+		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 400
+
+	if os.path.join(matiere, classe, specialite) not in os.listdir(os.path.join("matiere", matiere, classe)):
+		return {"error": "Invalid specialite", "all": os.listdir(os.path.join("matiere", matiere, classe))}, 400
 	
-	title = request.form.get("titre")
-	desc = request.form.get("desc")
+	file = request.files["file"]
+	title = request.form.get("title")
 	author = request.form.get("author")
-	path = request.form.get("path")
-	
-	file = request.files.get("file")
+	desc = request.form.get("desc")
 
-	if file is None or file.filename == "":
-                return "No file provided", 400
+	if not title or not author or not desc:
+		return {"error": "Missing title, author, or description"}, 400
 
-	
-	uuid_str = str(uuid.uuid4())
-	filename = secure_filename(file.filename)
-	path_json = os.path.join(path, "revisons_notes_files", os.path.splitext(filename)[0] + ".json")
+	if file.filename == "":
+		return {"error": "No selected file"}, 400
 
-	filename = f"{uuid_str}_{filename}"
-	data_json = {
+	if file:
+		filename = secure_filename(file.filename)
+		unique_filename = f"{uuid.uuid4()}_{filename}"
+		file_path = os.path.join(SAVE_FILES_FOLDER, unique_filename)
+		file.save(file_path)
+
+		metadata = {
 			"title": title,
-			"desc": desc,
 			"author": author,
-			"path": path,
-			"name": filename,
-			"stars": 0
+			"desc": desc,
+			"filename": unique_filename
 		}
-	file.save(os.path.join("uploads", filename))
 
-	with open(path_json, "w") as f:
-                json.dump(data_json, f, indent=4, ensure_ascii=False)
-	
-	return "OK", 200
+		metadata_path = os.path.join(matiere, classe, specialite, f"{unique_filename}.json")
+		save_json_file(metadata_path, metadata)
 
-# @Aloijsjimmyargilenilsfranckgeorge you need to verify in the html code page that the element filename are completed by the user and to send it in json format
-@app.route("/download", methods=['POST'])
-def download():
-	filename = request.form.get("filename")
-	filename = secure_filename(filename)
-	
-	check_file = os.path.join("uploads", filename)
-	if not os.path.exists(check_file):
-		return "File not found", 404
-	
-	return send_from_directory("uploads", filename, as_attachment=True, download_name=filename.split("_", 1)[1])
+		return {"message": "File uploaded successfully", "metadata": metadata}, 200
+
+@app.route("/download/<matiere>/<classe>/<specialite>/<filename>", methods=["GET"])
+def download_file(matiere, classe, specialite, filename):
+	json_path = os.path.join(matiere, classe, specialite, filename)
+	if not os.path.exists(json_path):
+		return {"error": "File not found"}, 404
+
+	with open(json_path, "r") as f:
+		metadata = json.load(f)
+
+	filename = re.sub(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}_',
+    '',
+    metadata["filename"]
+	)
+	filename = filename[:-5]  # Remove the last 5 characters (".json")
+	file_path = os.path.join(SAVE_FILES_FOLDER, metadata["filename"])
+	return send_from_directory(os.path.dirname(file_path), os.path.basename(file_path), as_attachment=True, download_name=filename)
+
+@app.route("/info/matiere", methods=["GET"])
+def get_matiere():
+	matiere_list = os.listdir("matiere")
+	return {"matiere": matiere_list}, 200
+
+@app.route("/info/classe/<matiere>", methods=["GET"])
+def get_classe(matiere):
+	if os.path.join(matiere) not in os.listdir("matiere"):
+		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
+
+	classe_list = os.listdir(os.path.join("matiere", matiere))
+	return {"classe": classe_list}, 200
+
+@app.route("/info/specialite/<matiere>/<classe>", methods=["GET"])
+def get_specialite(matiere, classe):
+	if os.path.join(matiere) not in os.listdir("matiere"):
+		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
+
+	if os.path.join(matiere, classe) not in os.listdir(os.path.join("matiere", matiere)):
+		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 400
+
+	specialite_list = os.listdir(os.path.join("matiere", matiere, classe))
+	return {"specialite": specialite_list}, 200
+
+@app.route("/info/files/<matiere>/<classe>/<specialite>", methods=["GET"])
+def get_files(matiere, classe, specialite):
+	if os.path.join(matiere) not in os.listdir("matiere"):
+		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
+
+	if os.path.join(matiere, classe) not in os.listdir(os.path.join("matiere", matiere)):
+		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 400
+
+	if os.path.join(matiere, classe, specialite) not in os.listdir(os.path.join("matiere", matiere, classe)):
+		return {"error": "Invalid specialite", "all": os.listdir(os.path.join("matiere", matiere, classe))}, 400
+
+	files_list = os.listdir(os.path.join("matiere", matiere, classe, specialite))
+	return {"files": files_list}, 200
 
 if __name__ == "__main__":
-	os.makedirs("uploads", exist_ok=True)
 	app.run(host="0.0.0.0", port=8080, debug=False)
 
