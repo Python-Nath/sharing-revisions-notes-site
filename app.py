@@ -4,7 +4,7 @@ import os
 import uuid
 import json
 
-from werkzeug.utils import secure_filename 
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 SAVE_FILES_FOLDER = "saves"
@@ -20,21 +20,20 @@ def save_json_file(file_path, data):
 		json.dump(data, f, indent=4, ensure_ascii=False)
 
 
-
-app.route("/upload/<matiere>/<classe>/<specialite>", methods=["POST"])
+@app.route("/upload/<matiere>/<classe>/<specialite>", methods=["POST"])
 def upload_file(matiere, classe, specialite):
 	if "file" not in request.files:
 		return {"error": "No file part"}, 400
 
-	if os.path.join(matiere) not in os.listdir("matiere"):
+	if matiere not in os.listdir("matiere"):
 		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
 
-	if os.path.join(matiere, classe) not in os.listdir(os.path.join("matiere", matiere)):
+	if classe not in os.listdir(os.path.join("matiere", matiere)):
 		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 400
 
-	if os.path.join(matiere, classe, specialite) not in os.listdir(os.path.join("matiere", matiere, classe)):
+	if specialite not in os.listdir(os.path.join("matiere", matiere, classe)):
 		return {"error": "Invalid specialite", "all": os.listdir(os.path.join("matiere", matiere, classe))}, 400
-	
+
 	file = request.files["file"]
 	title = request.form.get("title")
 	author = request.form.get("author")
@@ -74,9 +73,9 @@ def download_file(matiere, classe, specialite, filename):
 		metadata = json.load(f)
 
 	filename = re.sub(
-    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}_',
-    '',
-    metadata["filename"]
+	    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}_',
+	    '',
+	    metadata["filename"]
 	)
 	filename = filename[:-5]  # Remove the last 5 characters (".json")
 	file_path = os.path.join(SAVE_FILES_FOLDER, metadata["filename"])
@@ -89,7 +88,7 @@ def get_matiere():
 
 @app.route("/info/classe/<matiere>", methods=["GET"])
 def get_classe(matiere):
-	if os.path.join(matiere) not in os.listdir("matiere"):
+	if matiere not in os.listdir("matiere"):
 		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
 
 	classe_list = os.listdir(os.path.join("matiere", matiere))
@@ -97,10 +96,10 @@ def get_classe(matiere):
 
 @app.route("/info/specialite/<matiere>/<classe>", methods=["GET"])
 def get_specialite(matiere, classe):
-	if os.path.join(matiere) not in os.listdir("matiere"):
+	if matiere not in os.listdir("matiere"):
 		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
 
-	if os.path.join(matiere, classe) not in os.listdir(os.path.join("matiere", matiere)):
+	if classe not in os.listdir(os.path.join("matiere", matiere)):
 		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 400
 
 	specialite_list = os.listdir(os.path.join("matiere", matiere, classe))
@@ -108,13 +107,13 @@ def get_specialite(matiere, classe):
 
 @app.route("/info/files/<matiere>/<classe>/<specialite>", methods=["GET"])
 def get_files(matiere, classe, specialite):
-	if os.path.join(matiere) not in os.listdir("matiere"):
+	if matiere not in os.listdir("matiere"):
 		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
 
-	if os.path.join(matiere, classe) not in os.listdir(os.path.join("matiere", matiere)):
+	if classe not in os.listdir(os.path.join("matiere", matiere)):
 		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 400
 
-	if os.path.join(matiere, classe, specialite) not in os.listdir(os.path.join("matiere", matiere, classe)):
+	if specialite not in os.listdir(os.path.join("matiere", matiere, classe)):
 		return {"error": "Invalid specialite", "all": os.listdir(os.path.join("matiere", matiere, classe))}, 400
 
 	files_list = os.listdir(os.path.join("matiere", matiere, classe, specialite))
@@ -122,4 +121,3 @@ def get_files(matiere, classe, specialite):
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=8080, debug=False)
-
