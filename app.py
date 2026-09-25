@@ -106,6 +106,20 @@ def get_specialite(matiere, classe):
 	specialite_list = os.listdir(os.path.join("matiere", matiere, classe))
 	return {"specialite": specialite_list}, 200
 
+@app.route("/info/files/<matiere>/<classe>/<specialite>", methods=["GET"])
+def get_files(matiere, classe, specialite):
+	if os.path.join(matiere) not in os.listdir("matiere"):
+		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 400
+
+	if os.path.join(matiere, classe) not in os.listdir(os.path.join("matiere", matiere)):
+		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 400
+
+	if os.path.join(matiere, classe, specialite) not in os.listdir(os.path.join("matiere", matiere, classe)):
+		return {"error": "Invalid specialite", "all": os.listdir(os.path.join("matiere", matiere, classe))}, 400
+
+	files_list = os.listdir(os.path.join("matiere", matiere, classe, specialite))
+	return {"files": files_list}, 200
+
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=8080, debug=False)
 
