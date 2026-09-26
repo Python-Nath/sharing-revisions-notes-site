@@ -238,11 +238,18 @@ def upload_file(matiere, classe, specialite, base_url):
         # Traitement de la réponse
         if response.status_code == 201:
             result = response.json()
+            metadata = Table(title="Métadonnées du fichier", border_style="green")
+            metadata.add_column("Champ", style="bold cyan")
+            metadata.add_column("Valeur", style="black")
+            metadata.add_row("Titre", str(result.get("title", title)))
+            metadata.add_row("Auteur", str(result.get("author", author)))
+            metadata.add_row("Description", str(result.get("desc", desc)))
 
             console.print(Panel.fit(
-                f"[bold green]Fichier envoyé avec succès ![/bold green]\n{result}",
+                "[bold green]Fichier envoyé avec succès ![/bold green]",
                 border_style="green"
             ))
+            console.print(metadata)
 
         else:
             try:
