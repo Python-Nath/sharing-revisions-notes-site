@@ -1,2 +1,4 @@
 flask
-werkzeug
+gunicorn
+requests
+rich

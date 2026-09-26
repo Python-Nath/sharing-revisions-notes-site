@@ -158,18 +158,23 @@ def get_specialite(matiere, classe):
 
 @app.route("/info/files/<matiere>/<classe>/<specialite>", methods=["GET"])
 def get_files(matiere, classe, specialite):
-	if matiere not in os.listdir("matiere"):
-		return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 404
+    if matiere not in os.listdir("matiere"):
+        return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 404
 
-	if classe not in os.listdir(os.path.join("matiere", matiere)):
-		return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 404
+    if classe not in os.listdir(os.path.join("matiere", matiere)):
+        return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 404
 
-	if specialite not in os.listdir(os.path.join("matiere", matiere, classe)):
-		return {"error": "Invalid specialite", "all": os.listdir(os.path.join("matiere", matiere, classe))}, 404
+    if specialite not in os.listdir(os.path.join("matiere", matiere, classe)):
+        return {"error": "Invalid specialite", "all": os.listdir(os.path.join("matiere", matiere, classe))}, 404
 
-	files_list = os.listdir(os.path.join("matiere", matiere, classe, specialite))
-	return {"files": files_list}, 200
+    directory = os.path.join("matiere", matiere, classe, specialite)
+    files_list = [
+        filename
+        for filename in os.listdir(directory)
+        if filename.endswith(".json") and os.path.isfile(os.path.join(directory, filename))
+    ]
+    return {"files": files_list}, 200
 
 if __name__ == "__main__":
-	app.run(host="0.0.0.0", port=8080, debug=False)
+	app.run(host="0.0.0.0", port=8000, debug=False)
 
