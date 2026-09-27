@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
+from rich.text import Text
 
 console = Console()
 
@@ -59,16 +60,22 @@ def ask_console_text(prompt):
             return None
 
 
-def choose_from_list(items, title):
+def choose_from_list(items, title, item_style="black", orange_items=None):
     if not items:
         console.print(f"[yellow]Aucun élément disponible pour {title.lower()}.[/yellow]")
         return None
 
-    table = Table(title=title, border_style="cyan", show_lines=True)
+    table = Table(
+        title=title,
+        title_style=item_style,
+        border_style="cyan",
+        show_lines=True
+    )
     table.add_column("N°", style="bold cyan", justify="right")
-    table.add_column("Choix", style="black")
+    table.add_column("Choix")
     for index, item in enumerate(items, start=1):
-        table.add_row(str(index), str(item))
+        choice_style = "orange1" if orange_items and item in orange_items else item_style
+        table.add_row(str(index), Text(str(item), style=choice_style))
     console.print(table)
 
     while True:
@@ -239,8 +246,8 @@ def upload_file(matiere, classe, specialite, base_url):
         if response.status_code == 201:
             result = response.json()
             metadata = Table(title="Métadonnées du fichier", border_style="green")
-            metadata.add_column("Champ", style="bold cyan")
-            metadata.add_column("Valeur", style="black")
+            metadata.add_column("Champ", style="orange1")
+            metadata.add_column("Valeur", style="orange1")
             metadata.add_row("Titre", str(result.get("title", title)))
             metadata.add_row("Auteur", str(result.get("author", author)))
             metadata.add_row("Description", str(result.get("desc", desc)))
@@ -272,7 +279,11 @@ def main():
         "[dim]Gestion des fichiers de cours[/dim]",
         border_style="bright_cyan"
     ))
-    action = choose_from_list(["Parcourir et transférer un fichier", "Aide API"], "Menu principal")
+    action = choose_from_list(
+        ["Parcourir et transférer un fichier", "Aide API"],
+        "Menu principal",
+        orange_items={"Parcourir et transférer un fichier", "Aide API"}
+    )
     if action is None:
         console.print("[yellow]Opération annulée.[/yellow]")
         return
@@ -284,7 +295,9 @@ def main():
     if not matiere_response:
         return
     matieres = matiere_response.json().get("matiere", [])
-    chosen_matiere = choose_from_list(matieres, "Matières disponibles")
+    chosen_matiere = choose_from_list(
+        matieres, "Matières disponibles", item_style="orange1"
+    )
     if chosen_matiere is None:
         return
 
@@ -292,7 +305,9 @@ def main():
     if not classe_response:
         return
     classes = classe_response.json().get("classe", [])
-    chosen_classe = choose_from_list(classes, f"Classes de {chosen_matiere}")
+    chosen_classe = choose_from_list(
+        classes, f"Classes de {chosen_matiere}", item_style="orange1"
+    )
     if chosen_classe is None:
         return
 
@@ -303,12 +318,16 @@ def main():
         return
     specialities = specialite_response.json().get("specialite", [])
     chosen_specialite = choose_from_list(
-        specialities, f"Spécialités de {chosen_classe}"
+        specialities, f"Spécialités de {chosen_classe}", item_style="orange1"
     )
     if chosen_specialite is None:
         return
 
-    operation = choose_from_list(["Envoyer un fichier", "Télécharger un fichier"], "Action")
+    operation = choose_from_list(
+        ["Envoyer un fichier", "Télécharger un fichier"],
+        "Action",
+        orange_items={"Envoyer un fichier", "Télécharger un fichier"}
+    )
     if operation is None:
         return
     if operation == "Envoyer un fichier":
@@ -336,7 +355,9 @@ def main():
             label = str(file_name)
         file_labels.append(label)
 
-    selected_label = choose_from_list(file_labels, "Fichiers disponibles")
+    selected_label = choose_from_list(
+        file_labels, "Fichiers disponibles", item_style="orange1"
+    )
     if selected_label is None:
         return
     selected_index = file_labels.index(selected_label)
