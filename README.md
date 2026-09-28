@@ -11,14 +11,13 @@ A site where all students can upload their lesson or revisions notes to share th
 - HTML
 - CSS 
 
-## Templates
+## Commands for install client
 
-```text
-It is the folder where we will put all the html pages to be accesible from flask
-```
-## app.py
-```text
-This is the app who is in charge of upload and download the file
+```bash
+git clone --branch server/client-cli https://github.com/Python-Nath/sharing-revisions-notes-site.git
+cd sharing-revisions-notes-site
+python -m pip install -r requirements.txt
+python init_client_cli.py && python cli_site_example_rich_ai.py
 ```
 
 
