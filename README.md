@@ -20,4 +20,11 @@ python -m pip install -r requirements.txt
 python init_client_cli.py && python cli_site_example_rich_ai.py
 ```
 
+## Commands for install server
 
+```bash
+git clone --branch server/server https://github.com/Python-Nath/sharing-revisions-notes-site.git
+cd sharing-revisions-notes-site
+python -m pip install -r requirements.txt
+python make_structure.py && python app.py
+```
