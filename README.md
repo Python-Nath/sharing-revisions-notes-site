@@ -13,11 +13,20 @@ A site where all students can upload their lesson or revisions notes to share th
 
 ## Commands for install server
 
+### Si Linux 
+
 ```bash
-git clone --branch server/server https://github.com/Python-Nath/sharing-revisions-notes-site.git
+sudo apt install python3-venv
+python3 -m venv ./venv
+. ./venv/bin/activate
+```
+### Install
+
+```bash
+git clone --branch server/client-cli https://github.com/Python-Nath/sharing-revisions-notes-site.git
 cd sharing-revisions-notes-site
 python -m pip install -r requirements.txt
-python make_structure.py && python app.py
+python init_client_cli.py && python cli_site_example_rich_ai.py
 ```
 
 
