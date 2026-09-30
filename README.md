@@ -13,6 +13,15 @@ A site where all students can upload their lesson or revisions notes to share th
 
 ## Commands for install
 
+### Si Linux 
+
+```bash
+sudo apt install python3-venv
+python3 -m venv ./venv
+. ./venv/bin/activate
+```
+### Install
+
 ```bash
 git clone --branch server/client-cli https://github.com/Python-Nath/sharing-revisions-notes-site.git
 cd sharing-revisions-notes-site
