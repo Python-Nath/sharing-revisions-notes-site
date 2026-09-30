@@ -1,0 +1,23 @@
+[Unit]
+Description=Server Flask
+After=network.target
+
+[Service]
+User=flask
+Group=flask
+WorkingDirectory=/opt/sharing-revisions-notes-site
+ExecStart=/opt/sharing-revisions-notes-site/venv/bin/gunicorn \
+        --workers 3 \
+        --bind 0.0.0.0:8000 \
+        --access-logfile - \
+        --error-logfile - \
+        --capture-output \
+        --log-level info \
+        app:app
+
+KillMode=control-group
+Restart=on-failure
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
