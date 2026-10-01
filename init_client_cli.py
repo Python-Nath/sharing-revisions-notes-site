@@ -74,7 +74,7 @@ def main():
     new_ip = input("Enter the ip of the distant server (default: 127.0.0.1) : ") or "127.0.0.1"
     old_ip = "127.0.0.1"
 
-    files = ["cli_site_example_rich_ai.py", "cli_site_example.py"]
+    files = ["cli_site_example_rich_ai.py", "cli_site_example.py", "cli-termux.py"]
 
     change_ip(files, old_ip, new_ip)
 
