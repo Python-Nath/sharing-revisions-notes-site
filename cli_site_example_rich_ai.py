@@ -273,7 +273,7 @@ def upload_file(matiere, classe, specialite, base_url):
         root.destroy()
 
 def main():
-    base_url = "http://127.0.0.1:8000"
+    base_url = "http://141.11.237.34:8000"
     console.print(Panel.fit(
         "[bold bright_cyan]Sharing Revisions & Notes[/bold bright_cyan]\n"
         "[dim]Gestion des fichiers de cours[/dim]",
