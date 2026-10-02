@@ -79,7 +79,7 @@ def main():
     change_ip(files, old_ip, new_ip)
 
     print("======== Test the server connection ========")
-    adresse_text = "http://" + new_ip + ":8000"
+    adresse_text = "http://" + new_ip
     show_api_info(adresse_text)
 
 
