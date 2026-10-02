@@ -1,0 +1,14 @@
+ps1 (PowerShell):
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass 
+# to bypass the program execution Policy
+.\create_gitkeep.ps1
+# run the script
+
+
+sh (linux, macOS):
+
+chmod +x create_gitkeep.sh
+# declare that the script is executable
+sh create_gitkeep.sh
+# run the script
