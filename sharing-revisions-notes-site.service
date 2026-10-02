@@ -8,7 +8,7 @@ Group=flask
 WorkingDirectory=/opt/sharing-revisions-notes-site
 ExecStart=/opt/sharing-revisions-notes-site/venv/bin/gunicorn \
         --workers 3 \
-        --bind 0.0.0.0:8000 \
+        --bind 127.0.0.1:8000 \
         --access-logfile - \
         --error-logfile - \
         --capture-output \
