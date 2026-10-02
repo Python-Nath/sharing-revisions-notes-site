@@ -1,8 +1,0 @@
-Lisandro
-         1) Create an html page for the summary 1ere 2nd term
-         2) Create the htmls pages for choosing the lesson (Math, English, etc)
-         3) Create the htmls pages for choosing spe, not spe, euro, etc)
-Aloijs
-         4) Create the javascript for sending data to the api
-5) Updating the api with the save lesson logic
-6) finalizing all the project

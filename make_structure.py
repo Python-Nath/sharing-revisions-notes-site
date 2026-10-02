@@ -90,6 +90,7 @@ def make_structure(structure):
 
 def main():
     make_structure(STRUCTURE)
+    os.makedirs("uploads", exist_ok=True)
 
 
 if __name__ == "__main__":
