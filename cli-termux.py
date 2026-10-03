@@ -495,7 +495,7 @@ def upload_file(
 
 def main():
 
-    base_url = "http://141.11.237.34:8000"
+    base_url = "http://127.0.0.1:8000"
 
     console.print(
         Panel.fit(
