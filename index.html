@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sharing Revisions & Notes</title>
+</head>
+<body>
+  <h1>Sharing Revisions & Notes</h1>
+  <p id="status"></p>
+
+  <h2>1. Choix du cours</h2>
+  <label for="matiere">Matière</label>
+  <select id="matiere"></select>
+  <label for="classe">Classe</label>
+  <select id="classe"></select>
+  <label for="specialite">Spécialité</label>
+  <select id="specialite"></select>
+
+  <h2>2. Récapitulatif</h2>
+  <p id="summary"></p>
+
+  <p id="unavailable" style="color:red" hidden>Cours non disponible, merci d'entrer un cours qui existe</p>
+
+  <div id="course">
+  <h2>3. Fichiers disponibles</h2>
+  <ul id="files"></ul>
+
+  <h2>4. Envoyer un fichier</h2>
+  <form id="upload-form">
+    <p><label for="file">Fichier</label> <input type="file" id="file" name="file" required></p>
+    <p><label for="title">Titre</label> <input type="text" id="title" name="title" required></p>
+    <p><label for="author">Auteur</label> <input type="text" id="author" name="author" required></p>
+    <p><label for="desc">Description</label> <textarea id="desc" name="desc" rows="3" required></textarea></p>
+    <button type="submit">Envoyer</button>
+  </form>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
