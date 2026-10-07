@@ -4,36 +4,67 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sharing Revisions & Notes</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6; }
+    .view { border: 1px solid #ccc; padding: 1.5rem; border-radius: 8px; background: #f9f9f9; }
+    .hidden { display: none; }
+    .file-card { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; background: white; }
+    .actions { display: flex; gap: 1rem; margin-top: 1rem; }
+    select, input, textarea { display: block; margin-bottom: 1rem; width: 100%; max-width: 400px; padding: 0.5rem; }
+    button { padding: 0.5rem 1rem; cursor: pointer; }
+    #status { font-weight: bold; margin-bottom: 1rem; }
+  </style>
 </head>
 <body>
   <h1>Sharing Revisions & Notes</h1>
   <p id="status"></p>
 
-  <h2>1. Choix du cours</h2>
-  <label for="matiere">Matière</label>
-  <select id="matiere"></select>
-  <label for="classe">Classe</label>
-  <select id="classe"></select>
-  <label for="specialite">Spécialité</label>
-  <select id="specialite"></select>
+  <!-- View 1: Selection -->
+  <div id="view-selection" class="view">
+    <h2>1. Choix du cours</h2>
+    <label for="matiere">Matière</label>
+    <select id="matiere"><option value="">-- Choisir --</option></select>
 
-  <h2>2. Récapitulatif</h2>
-  <p id="summary"></p>
+    <label for="classe">Classe</label>
+    <select id="classe" disabled><option value="">-- Choisir --</option></select>
 
-  <p id="unavailable" style="color:red" hidden>Cours non disponible, merci d'entrer un cours qui existe</p>
+    <label for="specialite">Spécialité</label>
+    <select id="specialite" disabled><option value="">-- Choisir --</option></select>
 
-  <div id="course">
-  <h2>3. Fichiers disponibles</h2>
-  <ul id="files"></ul>
+    <h2>2. Récapitulatif</h2>
+    <p id="summary">Veuillez sélectionner un cours.</p>
+    <button id="btn-next" disabled>Continuer</button>
+  </div>
 
-  <h2>4. Envoyer un fichier</h2>
-  <form id="upload-form">
-    <p><label for="file">Fichier</label> <input type="file" id="file" name="file" required></p>
-    <p><label for="title">Titre</label> <input type="text" id="title" name="title" required></p>
-    <p><label for="author">Auteur</label> <input type="text" id="author" name="author" required></p>
-    <p><label for="desc">Description</label> <textarea id="desc" name="desc" rows="3" required></textarea></p>
-    <button type="submit">Envoyer</button>
-  </form>
+  <!-- View 2: Action Choice -->
+  <div id="view-choice" class="view hidden">
+    <h2>Récapitulatif de votre choix</h2>
+    <p id="choice-summary"></p>
+    <div class="actions">
+      <button id="btn-go-download">Télécharger des fiches</button>
+      <button id="btn-go-upload">Envoyer une fiche</button>
+      <button id="btn-back-selection">Retour</button>
+    </div>
+  </div>
+
+  <!-- View 3: Downloads -->
+  <div id="view-download" class="view hidden">
+    <h2>Fichiers disponibles</h2>
+    <div id="files"></div>
+    <button id="btn-back-choice">Retour au choix</button>
+  </div>
+
+  <!-- View 4: Upload -->
+  <div id="view-upload" class="view hidden">
+    <h2>Envoyer un fichier</h2>
+    <form id="upload-form">
+      <p><label for="file">Fichier</label> <input type="file" id="file" name="file" required></p>
+      <p><label for="title">Titre</label> <input type="text" id="title" name="title" required></p>
+      <p><label for="author">Auteur</label> <input type="text" id="author" name="author" required></p>
+      <p><label for="desc">Description</label> <textarea id="desc" name="desc" rows="3" required></textarea></p>
+      <button type="submit">Envoyer</button>
+    </form>
+    <button id="btn-back-choice-upload">Retour au choix</button>
   </div>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
