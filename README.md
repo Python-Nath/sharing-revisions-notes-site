@@ -1,43 +1,67 @@
-# Sharing Revisions Notes Site
+# 📚 Sharing Revisions Notes Site
 
-```text
-A site where all students can upload their lesson or revisions notes to share them with all the school.
-```
+A collaborative platform designed for students to upload, organize, and share their lesson and revision notes with the entire school community.
 
-## Code Languages
+## 🚀 Features
 
-- Python
-- JavaScript
-- HTML
-- CSS 
+- **Hierarchical Organization**: Notes are structured by Subject $\rightarrow$ Class $\rightarrow$ Specialization for easy discovery.
+- **Metadata Support**: Every upload includes a title, author, and description.
+- **Secure Storage**: Files are stored with unique IDs to prevent naming collisions.
+- **Simple API**: Lightweight Flask-based backend for seamless uploading and downloading.
 
-## 1) Commands for install server
+## 🛠️ Tech Stack
+
+- **Backend**: Python / Flask
+- **Frontend**: HTML, CSS, JavaScript
+- **Storage**: Local filesystem (JSON for metadata, dedicated folder for uploads)
+
+## 📦 Installation & Setup
+
+### Prerequisites
+- Python 3.x
+- Git
+
+### Server Deployment
+Follow these steps to set up the server on a Linux environment:
 
 ```bash
+# 1. Clone the repository
 cd /opt
-git clone --branch server/server https://github.com/Python-Nath/sharing-revisions-notes-site.git
+git clone --branch dev/claude https://github.com/Python-Nath/sharing-revisions-notes-site.git
 cd sharing-revisions-notes-site
+
+# 2. Setup virtual environment
 sudo apt install python3-venv
 python3 -m venv ./venv
-. ./venv/bin/activate
-python -m pip install -r requirements.txt
+source ./venv/bin/activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Initialize structure and start server
+# This creates the subject hierarchy and configures systemd/nginx
 python make_structure.py && sh init-server.sh
 ```
 
-## 2) Commands for install client
+## 📂 Project Structure
 
-### Si Linux 
+- `app.py`: Core Flask application and API routes.
+- `matiere/`: Hierarchical "database" storing metadata JSONs.
+- `uploads/`: Storage for the actual uploaded files.
+- `utils/make_structure.py`: Script to generate the predefined school subject folders.
+- `init-server.sh`: Deployment script for systemd and Nginx configuration.
 
+## 🛠️ Development
+
+To run the app in development mode:
 ```bash
-sudo apt install python3-venv
-python3 -m venv ./venv
-. ./venv/bin/activate
+python app.py
 ```
-### Install
 
+To clean the workspace:
 ```bash
-git clone --branch server/client-cli https://github.com/Python-Nath/sharing-revisions-notes-site.git
-cd sharing-revisions-notes-site
-python -m pip install -r requirements.txt
-python init_client_cli.py && python cli_site_example_rich_ai.py
+sh clean.sh
 ```
+
+---
+*Created to empower students through shared knowledge.*
