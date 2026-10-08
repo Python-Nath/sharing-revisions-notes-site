@@ -48,7 +48,7 @@ python make_structure.py && sh init-server.sh
 - `app.py`: Core Flask application and API routes.
 - `matiere/`: Hierarchical "database" storing metadata JSONs.
 - `uploads/`: Storage for the actual uploaded files.
-- `utils/make_structure.py`: Script to generate the predefined school subject folders.
+- `make_structure.py`: Script to generate the predefined school subject folders.
 - `init-server.sh`: Deployment script for systemd and Nginx configuration.
 
 ## 🛠️ Development
