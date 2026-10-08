@@ -1,6 +1,4 @@
-nginx et nginxsxnano partage de notes et de révisions de site
-
- server {
+server {
     listen 80;
     server_name 127.0.0.1;
     client_max_body_size 100M;
