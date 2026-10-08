@@ -7,6 +7,7 @@ import json
 from werkzeug.utils import secure_filename 
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
 SAVE_FILES_FOLDER = "uploads"
 
 os.makedirs(SAVE_FILES_FOLDER, exist_ok=True)
