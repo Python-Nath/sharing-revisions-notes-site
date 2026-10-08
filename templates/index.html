@@ -4,16 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sharing Revisions & Notes</title>
-  <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6; }
-    .view { border: 1px solid #ccc; padding: 1.5rem; border-radius: 8px; background: #f9f9f9; }
-    .hidden { display: none; }
-    .file-card { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; background: white; }
-    .actions { display: flex; gap: 1rem; margin-top: 1rem; }
-    select, input, textarea { display: block; margin-bottom: 1rem; width: 100%; max-width: 400px; padding: 0.5rem; }
-    button { padding: 0.5rem 1rem; cursor: pointer; }
-    #status { font-weight: bold; margin-bottom: 1rem; }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <h1>Sharing Revisions & Notes</h1>

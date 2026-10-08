@@ -24,7 +24,7 @@ The project is a Flask-based file-sharing system designed for students to upload
     - Each `.json` file contains metadata about the uploaded file, while the actual file is stored in the `uploads/` folder.
 - **`uploads/`**: Stores the actual files, renamed to `<file_id>_<original_filename>` to prevent collisions.
 - **`init-server.sh`**: A deployment script that can either launch the app directly or configure it as a systemd service with an Nginx reverse proxy.
-- **`utils/make_structure.py`**: Generates the predefined folder structure under `matiere/` based on school subjects.
+- **`make_structure.py`**: Generates the predefined folder structure under `matiere/` based on school subjects.
 
 ### Data Flow
 1. **Upload**: User sends a file $\rightarrow$ App generates UUID $\rightarrow$ File saved to `uploads/` $\rightarrow$ Metadata JSON saved to `matiere/.../`.
