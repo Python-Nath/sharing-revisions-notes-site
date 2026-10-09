@@ -27,7 +27,7 @@ Follow these steps to set up the server on a Linux environment:
 ```bash
 # 1. Clone the repository
 cd /opt
-git clone --branch dev/claude https://github.com/Python-Nath/sharing-revisions-notes-site.git
+git clone https://github.com/Python-Nath/sharing-revisions-notes-site.git
 cd sharing-revisions-notes-site
 
 # 2. Setup virtual environment
