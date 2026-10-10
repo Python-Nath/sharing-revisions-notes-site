@@ -1,6 +1,6 @@
 from flask import Blueprint
 import os
-from utilis.json_utils import load_json_file
+from utils.json_utils import load_json_file
 
 info_bp = Blueprint("info", __name__, url_prefix="/info")
 

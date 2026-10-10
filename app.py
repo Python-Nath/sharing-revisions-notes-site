@@ -4,7 +4,7 @@ from werkzeug.utils import secure_filename
 import os
 import uuid
 
-from utilis.json_utils import load_json_file, save_json_file
+from utils.json_utils import load_json_file, save_json_file
 from info.routes import info_bp
 
 
