@@ -1,25 +1,18 @@
-import re
 from flask import Flask, request, send_from_directory, render_template
+from werkzeug.utils import secure_filename 
+
 import os
 import uuid
-import json
 
-from werkzeug.utils import secure_filename 
+from utilis.json_utils import load_json_file, save_json_file
+from info.routes import info_bp
+
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
+
 SAVE_FILES_FOLDER = "uploads"
-
 os.makedirs(SAVE_FILES_FOLDER, exist_ok=True)
-
-def load_json_file(file_path):
-	with open(file_path, "r") as f:
-		return json.load(f)
-
-def save_json_file(file_path, data):
-	with open(file_path, "w") as f:
-		json.dump(data, f, indent=4, ensure_ascii=False)
-
 
 @app.route("/accueil", methods=["GET"])
 def index():
@@ -138,56 +131,7 @@ def download_file(matiere, classe, specialite, file_id):
         download_name=original_filename
     )
 
-@app.route("/info/matiere", methods=["GET"])
-def get_matiere():
-    matiere_list = os.listdir("matiere")
-    return {"matiere": matiere_list}, 200
-
-
-@app.route("/info/classe/<matiere>", methods=["GET"])
-def get_classe(matiere):
-    if matiere not in os.listdir("matiere"):
-        return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 404
-
-    classe_list = os.listdir(os.path.join("matiere", matiere))
-    return {"classe": classe_list}, 200
-
-
-@app.route("/info/specialite/<matiere>/<classe>", methods=["GET"])
-def get_specialite(matiere, classe):
-    if matiere not in os.listdir("matiere"):
-        return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 404
-
-    if classe not in os.listdir(os.path.join("matiere", matiere)):
-        return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 404
-
-    specialite_list = os.listdir(os.path.join("matiere", matiere, classe))
-    return {"specialite": specialite_list}, 200
-
-
-@app.route("/info/files/<matiere>/<classe>/<specialite>", methods=["GET"])
-def get_files(matiere, classe, specialite):
-    if matiere not in os.listdir("matiere"):
-        return {"error": "Invalid matiere", "all": os.listdir("matiere")}, 404
-
-    if classe not in os.listdir(os.path.join("matiere", matiere)):
-        return {"error": "Invalid classe", "all": os.listdir(os.path.join("matiere", matiere))}, 404
-
-    if specialite not in os.listdir(os.path.join("matiere", matiere, classe)):
-        return {"error": "Invalid specialite", "all": os.listdir(os.path.join("matiere", matiere, classe))}, 404
-
-    directory = os.path.join("matiere", matiere, classe, specialite)
-    files_list = [
-        filename
-        for filename in os.listdir(directory)
-        if filename.endswith(".json") and os.path.isfile(os.path.join(directory, filename))
-    ]
-    metadata_list = []
-    for filename in files_list:
-        file_path = os.path.join(directory, filename)
-        metadata = load_json_file(file_path)
-        metadata_list.append(metadata)
-    return {"files": files_list, "metadata": metadata_list}, 200
+app.register_blueprint(info_bp)
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=8000, debug=False)
