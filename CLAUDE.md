@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Install Dependencies**: `pip install -r requirements.txt`
 - **Run App (Dev)**: `python app.py`
-- **Initial Server Setup**: `python make_structure.py && sh init-server.sh` (Creates the folder hierarchy for subjects and configures systemd/nginx)
+- **Initial Server Setup**: `python make_structure.py && sh init-server.sh` (Creates the folder hierarchy for subjects and configures systemd/nginx as described in README.md)
 - **Clean Workspace**: `sh clean.sh`
 
 ## Architecture & Structure
@@ -30,3 +30,10 @@ The project is a Flask-based file-sharing system designed for students to upload
 1. **Upload**: User sends a file $\rightarrow$ App generates UUID $\rightarrow$ File saved to `uploads/` $\rightarrow$ Metadata JSON saved to `matiere/.../`.
 2. **Discovery**: Client requests `/info/matiere` $\rightarrow$ App lists directories in `matiere/`.
 3. **Download**: Client requests file by ID $\rightarrow$ App looks up JSON in `matiere/.../` $\rightarrow$ App serves file from `uploads/`.
+
+### Metadata Format
+Metadata JSON files in `matiere/` typically include:
+- `title`: The display name of the document.
+- `author`: The student who uploaded it.
+- `description`: A brief summary of the content.
+- `filename`: The original filename (used to reconstruct the file in `uploads/`).
