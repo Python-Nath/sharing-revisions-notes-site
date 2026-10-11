@@ -1,39 +1,44 @@
 from flask import Flask, request, send_from_directory, render_template
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 from werkzeug.utils import secure_filename 
+
+from info.routes import info_bp
+from users.routes import users_bp
 
 import os
 import uuid
+import secrets
+from datetime import timedelta
 
 from utils.json_utils import load_json_file, save_json_file
-from info.routes import info_bp
+from database.model import User, db
 
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
+app.config["JWT_SECRET_KEY"] = secrets.token_urlsafe(32)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
+app.config["JWT_COOKIE_SECURE"] = False  # Set to True in production with HTTPS
+app.config["JWT_COOKIE_CSRF_PROTECT"] = True
+app.config["JWT_COOKIE_HTTPS_ONLY"] = False  # Set to True in production with HTTPS
+
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+jwt = JWTManager(app)
+db.init_app(app)
+
 
 SAVE_FILES_FOLDER = "uploads"
 os.makedirs(SAVE_FILES_FOLDER, exist_ok=True)
 
-@app.route("/accueil", methods=["GET"])
-def index():
-	return render_template("index.html")
-
-@app.route("/help", methods=["GET"])
-def get_help():
-	return {
-		"message": "Welcome to the API!",
-		"endpoints": {
-			"/upload/<matiere>/<classe>/<specialite>": "Upload a file",
-			"/download/<matiere>/<classe>/<specialite>/<file_id>": "Download a file",
-			"/info/matiere": "Get list of subjects",
-			"/info/classe/<matiere>": "Get list of classes for a subject",
-			"/info/specialite/<matiere>/<classe>": "Get list of specializations for a subject and class",
-			"/info/files/<matiere>/<classe>/<specialite>": "Get list of files for a subject, class, and specialization"
-		}
-	}, 200
-
 @app.route("/upload/<matiere>/<classe>/<specialite>", methods=["POST"])
+@jwt_required()
 def upload_file(matiere, classe, specialite):
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
 
     # Vérification du dossier
     directory = os.path.join("matiere", matiere, classe, specialite)
@@ -80,10 +85,13 @@ def upload_file(matiere, classe, specialite):
     metadata = {
         "id": file_id,
         "title": title,
-        "author": author,
+        "author": user.username,
         "desc": desc,
         "filename": stored_filename,
-        "original_filename": filename
+        "original_filename": filename,
+        "matiere": matiere,
+        "classe": classe,
+        "specialite": specialite
     }
 
     metadata_path = os.path.join(
@@ -92,6 +100,15 @@ def upload_file(matiere, classe, specialite):
     )
 
     save_json_file(metadata_path, metadata)
+
+    # Mise à jour de l'utilisateur
+    if user.uploaded_files is None:
+        user.uploaded_files = []
+    if user.uploaded_metadatas is None:
+        user.uploaded_metadatas = {}
+
+    user.uploaded_files.append(file_id)
+    user.uploaded_metadatas[file_id] = metadata
 
     return {
         "message": "File uploaded successfully",
@@ -102,6 +119,7 @@ def upload_file(matiere, classe, specialite):
     "/download/<matiere>/<classe>/<specialite>/<file_id>",
     methods=["GET"]
 )
+@jwt_required(optional=True)
 def download_file(matiere, classe, specialite, file_id):
 
     directory = os.path.join(
@@ -124,6 +142,16 @@ def download_file(matiere, classe, specialite, file_id):
     stored_filename = metadata["filename"]
     original_filename = metadata["original_filename"]
 
+    user_id = get_jwt_identity()
+    if user_id:
+        user = User.query.get(user_id)
+        user.download_ids = user.download_ids or []
+        user.download_ids.append(file_id)
+        user.download_metadatas = user.download_metadatas or {}
+        user.download_metadatas[file_id] = metadata
+        db.session.commit()
+        
+
     return send_from_directory(
         SAVE_FILES_FOLDER,
         stored_filename,
@@ -132,7 +160,7 @@ def download_file(matiere, classe, specialite, file_id):
     )
 
 app.register_blueprint(info_bp)
-
+app.register_blueprint(users_bp)
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=8000, debug=False)
 
