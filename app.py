@@ -1,6 +1,7 @@
 from flask import Flask, request, send_from_directory, render_template
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
-from werkzeug.utils import secure_filename 
+from werkzeug.utils import secure_filename
+from sqlalchemy.orm.attributes import flag_modified
 
 from info.routes import info_bp
 from users.routes import users_bp
@@ -46,9 +47,10 @@ def upload_file(matiere, classe, specialite):
     user = User.query.get(user_id)
 
     # Vérification du dossier
-    directory = os.path.join("matiere", matiere, classe, specialite)
+    base_dir = os.path.abspath("matiere")
+    directory = os.path.abspath(os.path.join(base_dir, matiere, classe, specialite))
 
-    if not os.path.isdir(directory):
+    if not directory.startswith(base_dir) or not os.path.isdir(directory):
         return {"error": "Invalid path"}, 404
 
     # Vérification du fichier
@@ -129,12 +131,11 @@ def upload_file(matiere, classe, specialite):
 @jwt_required(optional=True)
 def download_file(matiere, classe, specialite, file_id):
 
-    directory = os.path.join(
-        "matiere",
-        matiere,
-        classe,
-        specialite
-    )
+    directory = os.path.abspath(os.path.join("matiere", matiere, classe, specialite))
+    base_dir = os.path.abspath("matiere")
+
+    if not directory.startswith(base_dir):
+        return {"error": "Invalid path"}, 400
 
     metadata_path = os.path.join(
         directory,

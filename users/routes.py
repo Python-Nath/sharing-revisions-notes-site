@@ -112,28 +112,43 @@ def save_modified_file(file_id):
     stored_filename = None
 
     if uploaded_file:
-        filename = secure_filename(uploaded_file.filename or "")
+        # Supprimer l'ancien fichier physique s'il existe
+        old_metadata = user.uploaded_metadatas.get(file_id)
+        if old_metadata and "filename" in old_metadata:
+            old_file_path = Path("uploads") / old_metadata["filename"]
+            if old_file_path.exists():
+                old_file_path.unlink()
 
+        filename = secure_filename(uploaded_file.filename or "")
         if not filename:
             return jsonify({"error": "Invalid filename"}), 400
 
         stored_filename = f"{file_id}_{filename}"
         file_path = Path("uploads") / stored_filename
 
+        # Sécurité : vérifier que le fichier est bien dans uploads/
+        if not file_path.resolve().is_relative_to(Path("uploads").resolve()):
+            return jsonify({"error": "Invalid file path"}), 400
+
     # Prepare the metadata path
+    base_dir = Path("matiere").resolve()
     metadata_path = (
-        Path("matiere")
+        base_dir
         / matiere
         / classe
         / specialite
         / f"{file_id}.json"
-    )
+    ).resolve()
+
+    if not metadata_path.is_relative_to(base_dir):
+        return jsonify({"error": "Invalid path"}), 400
 
     try:
         # Save the optional file
         if uploaded_file and file_path:
             file_path.parent.mkdir(parents=True, exist_ok=True)
             uploaded_file.save(file_path)
+
 
         # Save the JSON metadata
         save_json_file(metadata_path, metadata)
@@ -192,6 +207,7 @@ def delete_file(file_id):
 
     user.uploaded_files.remove(file_id)
     del user.uploaded_metadatas[file_id]
+    flag_modified(user, "uploaded_files")
     flag_modified(user, "uploaded_metadatas")
     db.session.commit()
 
