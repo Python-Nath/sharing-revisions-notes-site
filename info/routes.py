@@ -60,4 +60,4 @@ def get_files(matiere, classe, specialite):
         file_path = os.path.join(directory, filename)
         metadata = load_json_file(file_path)
         metadata_list.append(metadata)
-    return {"files": files_list, "metadata": metadata_list}, 200
+    return {"files": [f.replace(".json", "") for f in files_list], "metadata": metadata_list}, 200

@@ -54,7 +54,7 @@ def modify_file():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     if file_id not in user.uploaded_files:
-        return jsonify({"Unauthorized": "File not found in user's uploads"}), 403
+        return jsonify({"error": "File not found in user's uploads"}), 403
     metadata = user.uploaded_metadatas.get(file_id)
     if not metadata:
         return jsonify({"error": "Metadata not found for the specified file"}), 404
@@ -76,35 +76,33 @@ def save_modified_file(file_id):
             "error": "File not found in user's uploads"
         }), 403
 
-    data = request.get_json(silent=True)
+    # Transition to multipart/form-data
+    matiere = request.form.get("matiere")
+    classe = request.form.get("classe")
+    specialite = request.form.get("specialite")
+    title = request.form.get("title")
 
-    if not isinstance(data, dict):
-        return jsonify({"error": "Invalid JSON body"}), 400
+    if not all([matiere, classe, specialite]):
+        return jsonify({"error": "Missing required metadata fields"}), 400
 
-    metadata = data.get("metadata")
-
-    if not isinstance(metadata, dict) or not metadata:
-        return jsonify({"error": "No valid metadata provided"}), 400
-
-    # Validate required metadata fields before modifying the database
-    required_fields = ["matiere", "classe", "specialite"]
-
-    for field in required_fields:
-        value = metadata.get(field)
-
-        if not isinstance(value, str) or not value.strip():
-            return jsonify({
-                "error": f"Invalid or missing field: {field}"
-            }), 400
-
-    matiere = secure_filename(metadata["matiere"])
-    classe = secure_filename(metadata["classe"])
-    specialite = secure_filename(metadata["specialite"])
+    matiere = secure_filename(matiere)
+    classe = secure_filename(classe)
+    specialite = secure_filename(specialite)
 
     if not matiere or not classe or not specialite:
         return jsonify({
             "error": "Invalid matiere, classe, or specialite"
         }), 400
+
+    # Reconstruct metadata object
+    old_metadata = user.uploaded_metadatas.get(file_id) or {}
+    metadata = {
+        **old_metadata,
+        "matiere": matiere,
+        "classe": classe,
+        "specialite": specialite,
+        "title": title if title else old_metadata.get("title", "Sans titre")
+    }
 
     # Validate an optional uploaded file
     uploaded_file = request.files.get("file")
@@ -181,7 +179,7 @@ def delete_file(file_id):
     user = User.query.get(user_id)
 
     if file_id not in user.uploaded_files:
-        return jsonify({"Unauthorized": "File not found in user's uploads"}), 403
+        return jsonify({"error": "File not found in user's uploads"}), 403
 
     metadata = user.uploaded_metadatas.get(file_id)
     if not metadata:

@@ -54,8 +54,8 @@ def modify_file():
     user = User.query.get(user_id)
     role = user.role
 
-    if not (file_id in user.uploaded_files or role in ["admin", "moderator"]):
-        return jsonify({"Unauthorized": "You do not have permission to modify this file"}), 403
+    if file_id not in user.uploaded_files or role not in ["admin", "moderator"]:
+        return jsonify({"Unauthorized": "File not found in user's uploads"}), 403
     metadata = user.uploaded_metadatas.get(file_id)
     if not metadata:
         return jsonify({"error": "Metadata not found for the specified file"}), 404
@@ -74,39 +74,38 @@ def save_modified_file(file_id):
 
     role = user.role
 
-    if not (file_id in (user.uploaded_files or []) or role in ["admin", "moderator"]):
+    if role not in ["admin", "moderator"]:
         return jsonify({
-            "error": "You do not have permission to modify this file"
+            "error": "Unauthorized: Moderator privileges required"
         }), 403
 
-    # Use request.form because multipart/form-data is required for file uploads
+    # Transition to multipart/form-data
     matiere = request.form.get("matiere")
     classe = request.form.get("classe")
     specialite = request.form.get("specialite")
+    title = request.form.get("title")
 
-    # Additional metadata fields from form
+    if not all([matiere, classe, specialite]):
+        return jsonify({"error": "Missing required metadata fields"}), 400
+
+    matiere = secure_filename(matiere)
+    classe = secure_filename(classe)
+    specialite = secure_filename(specialite)
+
+    if not matiere or not classe or not specialite:
+        return jsonify({
+            "error": "Invalid matiere, classe, or specialite"
+        }), 400
+
+    # Reconstruct metadata object
+    old_metadata = user.uploaded_metadatas.get(file_id) or {}
     metadata = {
+        **old_metadata,
         "matiere": matiere,
         "classe": classe,
         "specialite": specialite,
-        "title": request.form.get("title"),
-        "desc": request.form.get("desc"),
-        "author": request.form.get("author")
+        "title": title if title else old_metadata.get("title", "Sans titre")
     }
-
-    if not all([matiere, classe, specialite]):
-        return jsonify({
-            "error": "Invalid matiere, classe, or specialite"
-        }), 400
-
-    matiere_safe = secure_filename(matiere)
-    classe_safe = secure_filename(classe)
-    specialite_safe = secure_filename(specialite)
-
-    if not matiere_safe or not classe_safe or not specialite_safe:
-        return jsonify({
-            "error": "Invalid matiere, classe, or specialite"
-        }), 400
 
     # Validate an optional uploaded file
     uploaded_file = request.files.get("file")
@@ -132,13 +131,13 @@ def save_modified_file(file_id):
         if not file_path.resolve().is_relative_to(Path("uploads").resolve()):
             return jsonify({"error": "Invalid file path"}), 400
 
-    # Prepare the metadata path using safe names
+    # Prepare the metadata path
     base_dir = Path("matiere").resolve()
     metadata_path = (
         base_dir
-        / matiere_safe
-        / classe_safe
-        / specialite_safe
+        / matiere
+        / classe
+        / specialite
         / f"{file_id}.json"
     ).resolve()
 
@@ -183,8 +182,8 @@ def delete_file(file_id):
     user = User.query.get(user_id)
     role = user.role
 
-    if not (file_id in user.uploaded_files or role in ["admin", "moderator"]):
-        return jsonify({"Unauthorized": "You do not have permission to modify this file"}), 403
+    if file_id not in user.uploaded_files or role not in ["admin", "moderator"]:
+        return jsonify({"Unauthorized": "File not found in user's uploads"}), 403
 
     metadata = user.uploaded_metadatas.get(file_id)
     if not metadata:
