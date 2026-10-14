@@ -1,9 +1,10 @@
 from flask import Flask, request, send_from_directory, render_template
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename 
 
 from info.routes import info_bp
 from users.routes import users_bp
+from auth.routes import auth_bp
 
 import os
 import uuid
@@ -32,6 +33,10 @@ db.init_app(app)
 
 SAVE_FILES_FOLDER = "uploads"
 os.makedirs(SAVE_FILES_FOLDER, exist_ok=True)
+
+@app.route("/accueil")
+def accueil():
+    return render_template("index.html")
 
 @app.route("/upload/<matiere>/<classe>/<specialite>", methods=["POST"])
 @jwt_required()
@@ -108,7 +113,9 @@ def upload_file(matiere, classe, specialite):
         user.uploaded_metadatas = {}
 
     user.uploaded_files.append(file_id)
+    flag_modified(user, "uploaded_files")
     user.uploaded_metadatas[file_id] = metadata
+    flag_modified(user, "uploaded_metadatas")
 
     return {
         "message": "File uploaded successfully",
@@ -161,6 +168,8 @@ def download_file(matiere, classe, specialite, file_id):
 
 app.register_blueprint(info_bp)
 app.register_blueprint(users_bp)
+app.register_blueprint(auth_bp)
+
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=8000, debug=False)
 

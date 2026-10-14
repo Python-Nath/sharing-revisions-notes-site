@@ -30,6 +30,10 @@ STRUCTURE = {
         "DNL-Mathematiques": ["option"],
         "DNL-SVT": ["option"],
         "DNL-SES": ["option"],
+        "Chinois": ["LV2"],
+        "Russe": ["option"],
+
+
     },
     "2nd": {
         "Francais": ["pas-specialite"],
@@ -50,6 +54,8 @@ STRUCTURE = {
         "Latin": ["option"],
         "Musique": ["option"],
         "DNL-Histoire": ["option"],
+        "Chinois": ["LV2"],
+        "Russe": ["option"],
     },
     "term": {
         "Francais": ["specialite", "pas-specialite"],
@@ -74,6 +80,8 @@ STRUCTURE = {
         "DNL-Mathematiques": ["option"],
         "DNL-SVT": ["option"],
         "DNL-SES": ["option"],
+        "Chinois": ["LV2"],
+        "Russe": ["option"],
     },
 }
 

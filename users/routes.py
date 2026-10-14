@@ -9,30 +9,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from utils.json_utils import save_json_file
 from database.model import User, db
 
-users_bp = Blueprint("users", __name__, url_prefix="/users")
-
-@users_bp.route("/login", methods=["POST"])
-def login():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
-
-    user = User.query.filter_by(username=username).first()
-
-    if not user or not check_password_hash(user.password, password):
-        return jsonify({"error": "Invalid credentials"}), 401
-
-    access_token = create_access_token(identity=user.id)
-    set_access_cookies(jsonify({"login": True}), access_token)
-
-    return jsonify({"message": "Login successful"}), 200
-
-@users_bp.route("/logout", methods=["POST"])
-@jwt_required()
-def logout():
-    response = jsonify({"message": "Logout successful"})
-    unset_jwt_cookies(response)
-    return response, 200
+users_bp = Blueprint("users", __name__, url_prefix="/users", template_folder=".")
 
 @users_bp.route("/dashboard", methods=["GET"])
 @jwt_required()
@@ -84,48 +61,103 @@ def modify_file():
 
     return render_template("users/modify/modify.html", metadata=metadata), 200
 
+
 @users_bp.route("/dashboard/modify/save/<file_id>", methods=["POST"])
 @jwt_required()
 def save_modified_file(file_id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
 
-    if file_id not in user.uploaded_files:
-        return jsonify({"Unauthorized": "File not found in user's uploads"}), 403
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-    data = request.get_json()
+    if file_id not in (user.uploaded_files or []):
+        return jsonify({
+            "error": "File not found in user's uploads"
+        }), 403
+
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON body"}), 400
+
     metadata = data.get("metadata")
 
-    if not metadata:
-        return jsonify({"error": "No metadata provided"}), 400
+    if not isinstance(metadata, dict) or not metadata:
+        return jsonify({"error": "No valid metadata provided"}), 400
 
-    user.uploaded_metadatas[file_id] = metadata
-    flag_modified(user, "uploaded_metadatas")
-    db.session.commit()
+    # Validate required metadata fields before modifying the database
+    required_fields = ["matiere", "classe", "specialite"]
+
+    for field in required_fields:
+        value = metadata.get(field)
+
+        if not isinstance(value, str) or not value.strip():
+            return jsonify({
+                "error": f"Invalid or missing field: {field}"
+            }), 400
 
     matiere = secure_filename(metadata["matiere"])
     classe = secure_filename(metadata["classe"])
     specialite = secure_filename(metadata["specialite"])
 
     if not matiere or not classe or not specialite:
-        return jsonify({"error": "Invalid matiere, classe, or specialite"}), 400
+        return jsonify({
+            "error": "Invalid matiere, classe, or specialite"
+        }), 400
 
-    metadata_path = Path("matiere") / matiere / classe / specialite / f"{file_id}.json"
-    save_json_file(metadata_path, metadata)
+    # Validate an optional uploaded file
+    uploaded_file = request.files.get("file")
+    file_path = None
+    stored_filename = None
 
-    file = request.files.get("file")
-    
-    if file:
-        filename = secure_filename(file.filename)
+    if uploaded_file:
+        filename = secure_filename(uploaded_file.filename or "")
 
         if not filename:
-            return {"error": "Invalid filename"}, 400
+            return jsonify({"error": "Invalid filename"}), 400
 
         stored_filename = f"{file_id}_{filename}"
         file_path = Path("uploads") / stored_filename
-        file.save(file_path)
 
-    return jsonify({"message": "Metadata and file updated successfully"}), 200
+    # Prepare the metadata path
+    metadata_path = (
+        Path("matiere")
+        / matiere
+        / classe
+        / specialite
+        / f"{file_id}.json"
+    )
+
+    try:
+        # Save the optional file
+        if uploaded_file and file_path:
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            uploaded_file.save(file_path)
+
+        # Save the JSON metadata
+        save_json_file(metadata_path, metadata)
+
+        # Update the database
+        if user.uploaded_metadatas is None:
+            user.uploaded_metadatas = {}
+
+        user.uploaded_metadatas[file_id] = metadata
+        flag_modified(user, "uploaded_metadatas")
+
+        db.session.commit()
+
+    except Exception:
+        db.session.rollback()
+
+        # In production, log the exception here.
+        return jsonify({
+            "error": "Failed to save metadata or file"
+        }), 500
+
+    return jsonify({
+        "message": "Metadata and file updated successfully"
+    }), 200
 
 @users_bp.route("/dashboard/delete/<file_id>", methods=["POST"])
 @jwt_required()
