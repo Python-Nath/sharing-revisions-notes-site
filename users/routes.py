@@ -1,5 +1,6 @@
 import os
-from flask import render_template, Blueprint, request, jsonify
+import uuid
+from flask import render_template, Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 
@@ -9,7 +10,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from utils.json_utils import save_json_file, load_json_file
 from database.model import User, db
 
-users_bp = Blueprint("users", __name__, url_prefix="/users", template_folder=".", static_folder="users/static")
+users_bp = Blueprint("users", __name__, url_prefix="/users", template_folder=".", static_folder="static")
 
 @users_bp.route("/dashboard", methods=["GET"])
 @jwt_required()
@@ -30,7 +31,7 @@ def dashboard():
     }
 
     data_files_downloaded = user.download_ids if user.download_ids else []
-    files_metadata_downloaded = user.download_metadatas if user.download_metadatas else []
+    files_metadata_downloaded = user.download_metadatas or {}
 
     uploaded_files = user.uploaded_files if user.uploaded_files else []
     uploaded_metadatas = {}
@@ -44,7 +45,7 @@ def dashboard():
                 uploaded_metadatas[file_id] = load_json_file(path)
 
     return render_template(
-        "users/dashboard/dashboard.html",
+        "dashboard/dashboard.html",
         user=data_user,
         files_downloaded=data_files_downloaded,
         files_metadata_downloaded=files_metadata_downloaded,
@@ -74,7 +75,7 @@ def modify_file(file_id):
         return jsonify({"error": "Metadata file not found on disk"}), 404
 
     metadata = load_json_file(path)
-    return render_template("users/modify/modify.html", metadata=metadata), 200
+    return render_template("modify/modify.html", metadata=metadata), 200
 
 
 @users_bp.route("/dashboard/modify/save/<file_id>", methods=["POST"])
@@ -109,7 +110,6 @@ def save_modified_file(file_id):
             "error": "Invalid matiere, classe, or specialite"
         }), 400
 
-    # Reconstruct metadata object
     old_metadata = user.uploaded_metadatas.get(file_id) or {}
     metadata = {
         **old_metadata,
@@ -121,27 +121,19 @@ def save_modified_file(file_id):
 
     # Validate an optional uploaded file
     uploaded_file = request.files.get("file")
-    file_path = None
-    stored_filename = None
+    new_file_path = None
+    old_file_path = None
 
-    if uploaded_file:
-        # Supprimer l'ancien fichier physique s'il existe
-        old_metadata = user.uploaded_metadatas.get(file_id)
-        if old_metadata and "filename" in old_metadata:
-            old_file_path = Path("uploads") / old_metadata["filename"]
-            if old_file_path.exists():
-                old_file_path.unlink()
-
-        filename = secure_filename(uploaded_file.filename or "")
+    if uploaded_file and uploaded_file.filename:
+        filename = secure_filename(uploaded_file.filename)
         if not filename:
             return jsonify({"error": "Invalid filename"}), 400
 
         stored_filename = f"{file_id}_{filename}"
-        file_path = Path("uploads") / stored_filename
-
-        # Sécurité : vérifier que le fichier est bien dans uploads/
-        if not file_path.resolve().is_relative_to(Path("uploads").resolve()):
+        new_file_path = (Path("uploads") / stored_filename).resolve()
+        if not new_file_path.is_relative_to(Path("uploads").resolve()):
             return jsonify({"error": "Invalid file path"}), 400
+        metadata["filename"] = stored_filename
 
     # Prepare the metadata path
     base_dir = Path("matiere").resolve()
@@ -155,33 +147,44 @@ def save_modified_file(file_id):
 
     if not metadata_path.is_relative_to(base_dir):
         return jsonify({"error": "Invalid path"}), 400
+    if not metadata_path.parent.is_dir():
+        return jsonify({"error": "Destination category does not exist"}), 404
+
+    old_metadata_path = None
+    if old_metadata.get("matiere") and old_metadata.get("classe") and old_metadata.get("specialite"):
+        old_metadata_path = (
+            base_dir
+            / secure_filename(old_metadata["matiere"])
+            / secure_filename(old_metadata["classe"])
+            / secure_filename(old_metadata["specialite"])
+            / f"{file_id}.json"
+        ).resolve()
+        if not old_metadata_path.is_relative_to(base_dir):
+            return jsonify({"error": "Invalid existing metadata path"}), 400
 
     try:
-        # Save the optional file
-        if uploaded_file and file_path:
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            uploaded_file.save(file_path)
-
-
-        # Save the JSON metadata
+        if uploaded_file and uploaded_file.filename and new_file_path:
+            uploaded_file.save(new_file_path)
         save_json_file(metadata_path, metadata)
 
-        # Update the database
         if user.uploaded_metadatas is None:
             user.uploaded_metadatas = {}
 
         user.uploaded_metadatas[file_id] = metadata
         flag_modified(user, "uploaded_metadatas")
-
         db.session.commit()
 
     except Exception:
         db.session.rollback()
-
-        # In production, log the exception here.
+        current_app.logger.exception("Failed to save modified file metadata or upload")
         return jsonify({
             "error": "Failed to save metadata or file"
         }), 500
+
+    if old_metadata_path and old_metadata_path != metadata_path and old_metadata_path.exists():
+        old_metadata_path.unlink()
+    if old_file_path and old_file_path != new_file_path and old_file_path.exists():
+        old_file_path.unlink()
 
     return jsonify({
         "message": "Metadata and file updated successfully"
@@ -232,4 +235,3 @@ def delete_file(file_id):
     return jsonify({"message": "File and its metadata deleted successfully"}), 200
 
     
-

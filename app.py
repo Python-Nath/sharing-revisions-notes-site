@@ -11,6 +11,7 @@ from moderator.routes import moderator_bp
 import os
 import uuid
 import secrets
+from pathlib import Path
 from datetime import timedelta
 
 from utils.json_utils import load_json_file, save_json_file
@@ -46,12 +47,14 @@ def upload_file(matiere, classe, specialite):
 
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
+    if not user:
+        return {"error": "User not found"}, 404
 
     # Vérification du dossier
-    base_dir = os.path.abspath("matiere")
-    directory = os.path.abspath(os.path.join(base_dir, matiere, classe, specialite))
+    base_dir = Path("matiere").resolve()
+    directory = (base_dir / matiere / classe / specialite).resolve()
 
-    if not directory.startswith(base_dir) or not os.path.isdir(directory):
+    if not directory.is_relative_to(base_dir) or not directory.is_dir():
         return {"error": "Invalid path"}, 404
 
     # Vérification du fichier
@@ -119,6 +122,7 @@ def upload_file(matiere, classe, specialite):
     flag_modified(user, "uploaded_files")
     user.uploaded_metadatas[file_id] = metadata
     flag_modified(user, "uploaded_metadatas")
+    db.session.commit()
 
     return {
         "message": "File uploaded successfully",
@@ -132,10 +136,10 @@ def upload_file(matiere, classe, specialite):
 @jwt_required(optional=True)
 def download_file(matiere, classe, specialite, file_id):
 
-    directory = os.path.abspath(os.path.join("matiere", matiere, classe, specialite))
-    base_dir = os.path.abspath("matiere")
+    base_dir = Path("matiere").resolve()
+    directory = (base_dir / matiere / classe / specialite).resolve()
 
-    if not directory.startswith(base_dir):
+    if not directory.is_relative_to(base_dir):
         return {"error": "Invalid path"}, 400
 
     metadata_path = os.path.join(
@@ -147,6 +151,8 @@ def download_file(matiere, classe, specialite, file_id):
         return {"error": "File not found"}, 404
 
     metadata = load_json_file(metadata_path)
+    if not metadata or not metadata.get("filename") or not metadata.get("original_filename"):
+        return {"error": "Invalid file metadata"}, 404
 
     stored_filename = metadata["filename"]
     original_filename = metadata["original_filename"]
@@ -154,10 +160,14 @@ def download_file(matiere, classe, specialite, file_id):
     user_id = get_jwt_identity()
     if user_id:
         user = User.query.get(user_id)
+        if not user:
+            return {"error": "User not found"}, 404
         user.download_ids = user.download_ids or []
         user.download_ids.append(file_id)
+        flag_modified(user, "download_ids")
         user.download_metadatas = user.download_metadatas or {}
         user.download_metadatas[file_id] = metadata
+        flag_modified(user, "download_metadatas")
         db.session.commit()
         
 
@@ -175,4 +185,3 @@ app.register_blueprint(moderator_bp)
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=8000, debug=False)
-
