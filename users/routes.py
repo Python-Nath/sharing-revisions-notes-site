@@ -9,7 +9,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from utils.json_utils import save_json_file
 from database.model import User, db
 
-users_bp = Blueprint("users", __name__, url_prefix="/users", template_folder=".")
+users_bp = Blueprint("users", __name__, url_prefix="/users", template_folder=".", static_folder="users/static")
 
 @users_bp.route("/dashboard", methods=["GET"])
 @jwt_required()

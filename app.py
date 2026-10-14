@@ -6,6 +6,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from info.routes import info_bp
 from users.routes import users_bp
 from auth.routes import auth_bp
+from moderator.routes import moderator_bp
 
 import os
 import uuid
@@ -170,6 +171,7 @@ def download_file(matiere, classe, specialite, file_id):
 app.register_blueprint(info_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(auth_bp)
+app.register_blueprint(moderator_bp)
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=8000, debug=False)

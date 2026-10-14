@@ -15,6 +15,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="user")  # Default role is 'user'
+    is_ban = db.Column(db.Boolean, nullable=False, default=False)
     download_ids = db.Column(db.JSON, nullable=True, default=list)  # Store download information as JSON
     download_metadatas = db.Column(db.JSON, nullable=True, default=dict)  # Store download metadata as JSON
     uploaded_files = db.Column(db.JSON, nullable=True, default=list)  # Store uploaded files as JSON

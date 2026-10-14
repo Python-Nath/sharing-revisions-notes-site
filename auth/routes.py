@@ -4,7 +4,7 @@ from flask_jwt_extended import jwt_required, create_access_token, set_access_coo
 
 from werkzeug.security import check_password_hash
 
-auth_bp = Blueprint("auth", __name__, url_prefix="/auth", template_folder=".")
+auth_bp = Blueprint("auth", __name__, url_prefix="/auth", template_folder=".", static_folder="auth/static")
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
@@ -13,6 +13,9 @@ def login():
     password = data.get("password")
 
     user = User.query.filter_by(username=username).first()
+
+    if user.is_ban:
+        return jsonify({"error": "User is banned"}), 403
 
     if not user or not check_password_hash(user.password, password):
         return jsonify({"error": "Invalid credentials"}), 401
