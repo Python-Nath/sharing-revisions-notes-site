@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from pathlib import Path
 from sqlalchemy.orm.attributes import flag_modified
 
-from utils.json_utils import save_json_file
+from utils.json_utils import save_json_file, load_json_file 
 from database.model import User, db
 
 moderator_bp = Blueprint("moderator", __name__, url_prefix="/moderator", template_folder=".", static_folder="moderator/static")
@@ -15,6 +15,8 @@ moderator_bp = Blueprint("moderator", __name__, url_prefix="/moderator", templat
 def dashboard():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
+    if user.role not in ["admin", "moderator"]:
+        return jsonify({"error": "Unauthorized"}), 403  
 
     if not user:
         return jsonify({"error": "User not found"}), 404
@@ -45,20 +47,18 @@ def dashboard():
         files_metadata_uploaded=uploaded_metadatas
     ), 200
 
-@moderator_bp.route("/dashboard/modify", methods=["POST"])
+@moderator_bp.route("/dashboard/modify/<file_id>", methods=["GET"])
 @jwt_required()
-def modify_file():
-    data = request.get_json()
-    file_id = data.get("file_id")
+def modify_file(file_id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     role = user.role
 
     if file_id not in user.uploaded_files or role not in ["admin", "moderator"]:
         return jsonify({"Unauthorized": "File not found in user's uploads"}), 403
-    metadata = user.uploaded_metadatas.get(file_id)
-    if not metadata:
-        return jsonify({"error": "Metadata not found for the specified file"}), 404
+
+    metadata_path = Path("matiere").rglob(f"{file_id}.json")
+    metadata = load_json_file(next(metadata_path)) if metadata_path else {}
 
     return render_template("users/modify/modify.html", metadata=metadata), 200
 

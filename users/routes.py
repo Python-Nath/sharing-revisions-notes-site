@@ -1,12 +1,12 @@
+import os
 from flask import render_template, Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity, set_access_cookies, unset_jwt_cookies
-from werkzeug.security import check_password_hash
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 
 from pathlib import Path
 from sqlalchemy.orm.attributes import flag_modified
 
-from utils.json_utils import save_json_file
+from utils.json_utils import save_json_file, load_json_file
 from database.model import User, db
 
 users_bp = Blueprint("users", __name__, url_prefix="/users", template_folder=".", static_folder="users/static")
@@ -33,32 +33,47 @@ def dashboard():
     files_metadata_downloaded = user.download_metadatas if user.download_metadatas else []
 
     uploaded_files = user.uploaded_files if user.uploaded_files else []
-    uploaded_metadatas = user.uploaded_metadatas if user.uploaded_metadatas else []
+    uploaded_metadatas = {}
 
-
+    # Load metadata from filesystem (Source of Truth)
+    for file_id in uploaded_files:
+        cached_meta = user.uploaded_metadatas.get(file_id) if user.uploaded_metadatas else None
+        if cached_meta:
+            path = os.path.join("matiere", cached_meta["matiere"], cached_meta["classe"], cached_meta["specialite"], f"{file_id}.json")
+            if os.path.exists(path):
+                uploaded_metadatas[file_id] = load_json_file(path)
 
     return render_template(
-        "users/dashboard/dashboard.html", 
-        user=data_user, 
-        files_downloaded=data_files_downloaded, 
+        "users/dashboard/dashboard.html",
+        user=data_user,
+        files_downloaded=data_files_downloaded,
         files_metadata_downloaded=files_metadata_downloaded,
         files_uploaded=uploaded_files,
         files_metadata_uploaded=uploaded_metadatas
     ), 200
 
-@users_bp.route("/dashboard/modify", methods=["POST"])
+@users_bp.route("/dashboard/modify/<file_id>", methods=["GET"])
 @jwt_required()
-def modify_file():
-    data = request.get_json()
-    file_id = data.get("file_id")
+def modify_file(file_id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
-    if file_id not in user.uploaded_files:
-        return jsonify({"error": "File not found in user's uploads"}), 403
-    metadata = user.uploaded_metadatas.get(file_id)
-    if not metadata:
-        return jsonify({"error": "Metadata not found for the specified file"}), 404
 
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if file_id not in (user.uploaded_files or []):
+        return jsonify({"error": "File not found in user's uploads"}), 403
+
+    # Load metadata from filesystem (Source of Truth)
+    cached_meta = user.uploaded_metadatas.get(file_id) if user.uploaded_metadatas else None
+    if not cached_meta:
+        return jsonify({"error": "Metadata not found in database"}), 404
+
+    path = os.path.join("matiere", cached_meta["matiere"], cached_meta["classe"], cached_meta["specialite"], f"{file_id}.json")
+    if not os.path.exists(path):
+        return jsonify({"error": "Metadata file not found on disk"}), 404
+
+    metadata = load_json_file(path)
     return render_template("users/modify/modify.html", metadata=metadata), 200
 
 
@@ -178,7 +193,10 @@ def delete_file(file_id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
 
-    if file_id not in user.uploaded_files:
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if file_id not in (user.uploaded_files or []):
         return jsonify({"error": "File not found in user's uploads"}), 403
 
     metadata = user.uploaded_metadatas.get(file_id)
@@ -192,7 +210,7 @@ def delete_file(file_id):
 
     if not matiere or not classe or not specialite:
         return jsonify({"error": "Invalid matiere, classe, or specialite"}), 400
-    
+
     directory = Path("matiere") / matiere / classe / specialite
     file_path = Path("uploads") / stored_filename
     metadata_path = directory / f"{file_id}.json"
@@ -204,7 +222,9 @@ def delete_file(file_id):
         metadata_path.unlink()
 
     user.uploaded_files.remove(file_id)
-    del user.uploaded_metadatas[file_id]
+    if user.uploaded_metadatas:
+        user.uploaded_metadatas.pop(file_id, None)
+
     flag_modified(user, "uploaded_files")
     flag_modified(user, "uploaded_metadatas")
     db.session.commit()
