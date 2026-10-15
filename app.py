@@ -120,7 +120,16 @@ def upload_file(matiere, classe, specialite):
 
     user.uploaded_files.append(file_id)
     flag_modified(user, "uploaded_files")
-    user.uploaded_metadatas[file_id] = metadata
+
+    metadata_user = {
+        "id": file_id,
+        "filename": stored_filename,
+        "matiere": matiere,
+        "classe": classe,
+        "specialite": specialite
+    }
+
+    user.uploaded_metadatas[file_id] = metadata_user
     flag_modified(user, "uploaded_metadatas")
     db.session.commit()
 
@@ -166,7 +175,14 @@ def download_file(matiere, classe, specialite, file_id):
         user.download_ids.append(file_id)
         flag_modified(user, "download_ids")
         user.download_metadatas = user.download_metadatas or {}
-        user.download_metadatas[file_id] = metadata
+        metadata_user = {
+            "id": file_id,
+            "filename": stored_filename,
+            "matiere": matiere,
+            "classe": classe,
+            "specialite": specialite
+        }
+        user.download_metadatas[file_id] = metadata_user
         flag_modified(user, "download_metadatas")
         db.session.commit()
         

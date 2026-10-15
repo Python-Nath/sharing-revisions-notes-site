@@ -29,22 +29,9 @@ def dashboard():
         "role": user.role,
         "created_at": user.created_at,
     }
-
-    data_files_downloaded = user.download_ids if user.download_ids else []
-    files_metadata_downloaded = user.download_metadatas if user.download_metadatas else []
-
-    uploaded_files = user.uploaded_files if user.uploaded_files else []
-    uploaded_metadatas = user.uploaded_metadatas if user.uploaded_metadatas else []
-
-
-
     return render_template(
         "users/dashboard/dashboard.html", 
         user=data_user, 
-        files_downloaded=data_files_downloaded, 
-        files_metadata_downloaded=files_metadata_downloaded,
-        files_uploaded=uploaded_files,
-        files_metadata_uploaded=uploaded_metadatas
     ), 200
 
 @moderator_bp.route("/dashboard/modify/<file_id>", methods=["GET"])
@@ -84,6 +71,10 @@ def save_modified_file(file_id):
     classe = request.form.get("classe")
     specialite = request.form.get("specialite")
     title = request.form.get("title")
+    desc = request.form.get("desc")
+    stored_filename = request.form.get("stored_filename")
+    author = request.form.get("author")
+    original_filename = request.form.get("original_filename")
 
     if not all([matiere, classe, specialite]):
         return jsonify({"error": "Missing required metadata fields"}), 400
@@ -98,13 +89,16 @@ def save_modified_file(file_id):
         }), 400
 
     # Reconstruct metadata object
-    old_metadata = user.uploaded_metadatas.get(file_id) or {}
     metadata = {
-        **old_metadata,
+        "id": file_id, 
+        "title": title,
+        "desc": desc,
         "matiere": matiere,
         "classe": classe,
         "specialite": specialite,
-        "title": title if title else old_metadata.get("title", "Sans titre")
+        "author": author,
+        "filename": stored_filename,
+        "original_filename": original_filename
     }
 
     # Validate an optional uploaded file
@@ -114,11 +108,9 @@ def save_modified_file(file_id):
 
     if uploaded_file:
         # Supprimer l'ancien fichier physique s'il existe
-        old_metadata = user.uploaded_metadatas.get(file_id)
-        if old_metadata and "filename" in old_metadata:
-            old_file_path = Path("uploads") / old_metadata["filename"]
-            if old_file_path.exists():
-                old_file_path.unlink()
+        old_file_path = Path("uploads") / metadata["filename"]
+        if old_file_path.exists():
+            old_file_path.unlink()
 
         filename = secure_filename(uploaded_file.filename or "")
         if not filename:
@@ -175,7 +167,7 @@ def save_modified_file(file_id):
         "message": "Metadata and file updated successfully"
     }), 200
 
-@moderator_bp.route("/dashboard/delete/<file_id>", methods=["POST"])
+@moderator_bp.route("/dashboard/delete/<file_id>", methods=["DELETE"])
 @jwt_required()
 def delete_file(file_id):
     user_id = get_jwt_identity()
@@ -185,9 +177,11 @@ def delete_file(file_id):
     if file_id not in user.uploaded_files or role not in ["admin", "moderator"]:
         return jsonify({"Unauthorized": "File not found in user's uploads"}), 403
 
-    metadata = user.uploaded_metadatas.get(file_id)
-    if not metadata:
+    metadata_path = Path("matiere").rglob(f"{file_id}.json")
+    if not metadata_path:
         return jsonify({"error": "Metadata not found for the specified file"}), 404
+
+    metadata = load_json_file(metadata_path)
 
     stored_filename = metadata["filename"]
     matiere = secure_filename(metadata["matiere"])
@@ -206,11 +200,11 @@ def delete_file(file_id):
 
     if metadata_path.exists():
         metadata_path.unlink()
-
-    user.uploaded_files.remove(file_id)
-    del user.uploaded_metadatas[file_id]
-    flag_modified(user, "uploaded_files")
-    flag_modified(user, "uploaded_metadatas")
+    user_author = User.query.filter_by(username=metadata["author"])
+    user_author.uploaded_files.remove(file_id)
+    del user_author.uploaded_metadatas[file_id]
+    flag_modified(user_author, "uploaded_files")
+    flag_modified(user_author, "uploaded_metadatas")
     db.session.commit()
 
     return jsonify({"message": "File and its metadata deleted successfully"}), 200

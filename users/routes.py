@@ -30,8 +30,8 @@ def dashboard():
         "created_at": user.created_at,
     }
 
-    data_files_downloaded = user.download_ids if user.download_ids else []
-    files_metadata_downloaded = user.download_metadatas or {}
+    downloaded_files = user.download_ids if user.download_ids else []
+    downloaded_metadatas = {}
 
     uploaded_files = user.uploaded_files if user.uploaded_files else []
     uploaded_metadatas = {}
@@ -44,11 +44,18 @@ def dashboard():
             if os.path.exists(path):
                 uploaded_metadatas[file_id] = load_json_file(path)
 
+    for file_id in downloaded_files:
+        cached_meta = user.downloaded_metadatas.get(file_id)
+        if cached_meta:
+            path = os.path.join("matiere", cached_meta["matiere"], cached_meta["classe"], cached_meta["specialite"], f"{file_id}.json")
+            if os.path.exists(path):
+                downloaded_metadatas[file_id] = load_json_file(path)
+
     return render_template(
         "dashboard/dashboard.html",
         user=data_user,
-        files_downloaded=data_files_downloaded,
-        files_metadata_downloaded=files_metadata_downloaded,
+        files_downloaded=downloaded_files,
+        files_metadata_downloaded=downloaded_metadatas,
         files_uploaded=uploaded_files,
         files_metadata_uploaded=uploaded_metadatas
     ), 200
@@ -97,6 +104,10 @@ def save_modified_file(file_id):
     classe = request.form.get("classe")
     specialite = request.form.get("specialite")
     title = request.form.get("title")
+    desc = request.form.get("desc")
+    stored_filename = request.form.get("stored_filename")
+    author = user.username
+    original_filename = request.form.get("original_filename")
 
     if not all([matiere, classe, specialite]):
         return jsonify({"error": "Missing required metadata fields"}), 400
@@ -112,13 +123,16 @@ def save_modified_file(file_id):
 
     old_metadata = user.uploaded_metadatas.get(file_id) or {}
     metadata = {
-        **old_metadata,
+        "id": file_id, 
+        "title": title,
+        "desc": desc,
         "matiere": matiere,
         "classe": classe,
         "specialite": specialite,
-        "title": title if title else old_metadata.get("title", "Sans titre")
+        "author": author,
+        "filename": stored_filename,
+        "original_filename": original_filename
     }
-
     # Validate an optional uploaded file
     uploaded_file = request.files.get("file")
     new_file_path = None
@@ -134,6 +148,7 @@ def save_modified_file(file_id):
         if not new_file_path.is_relative_to(Path("uploads").resolve()):
             return jsonify({"error": "Invalid file path"}), 400
         metadata["filename"] = stored_filename
+        metadata["original_filename"] = filename
 
     # Prepare the metadata path
     base_dir = Path("matiere").resolve()
@@ -170,7 +185,14 @@ def save_modified_file(file_id):
         if user.uploaded_metadatas is None:
             user.uploaded_metadatas = {}
 
-        user.uploaded_metadatas[file_id] = metadata
+        metadata_user = {
+            "id": file_id,
+            "filename": stored_filename,
+            "matiere": matiere,
+            "classe": classe,
+            "specialite": specialite
+        }
+        user.uploaded_metadatas[file_id] = metadata_user
         flag_modified(user, "uploaded_metadatas")
         db.session.commit()
 
@@ -190,7 +212,7 @@ def save_modified_file(file_id):
         "message": "Metadata and file updated successfully"
     }), 200
 
-@users_bp.route("/dashboard/delete/<file_id>", methods=["POST"])
+@users_bp.route("/dashboard/delete/<file_id>", methods=["DELETE"])
 @jwt_required()
 def delete_file(file_id):
     user_id = get_jwt_identity()
@@ -233,5 +255,3 @@ def delete_file(file_id):
     db.session.commit()
 
     return jsonify({"message": "File and its metadata deleted successfully"}), 200
-
-    
