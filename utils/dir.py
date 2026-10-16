@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 def list_directory(directory):
     files_list = []
@@ -22,3 +23,6 @@ def validate_and_list(path, name):
     if not items or name not in items:
         return False, items
     return True, items
+
+def find_metadata_path(file_id):
+    return next(Path("matiere").rglob(f"{file_id}.json"), None)

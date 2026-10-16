@@ -1,11 +1,12 @@
-from flask import render_template, Blueprint, request, jsonify
+from flask import render_template, Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 
 from pathlib import Path
 from sqlalchemy.orm.attributes import flag_modified
 
-from utils.json_utils import save_json_file, load_json_file 
+from utils.json_utils import save_json_file, load_json_file
+from utils.dir import find_metadata_path
 from database.model import User, db
 
 moderator_bp = Blueprint("moderator", __name__, url_prefix="/moderator", template_folder=".", static_folder="moderator/static")
@@ -15,11 +16,12 @@ moderator_bp = Blueprint("moderator", __name__, url_prefix="/moderator", templat
 def dashboard():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
-    if user.role not in ["admin", "moderator"]:
-        return jsonify({"error": "Unauthorized"}), 403  
 
     if not user:
         return jsonify({"error": "User not found"}), 404
+
+    if user.role not in ["admin", "moderator"]:
+        return jsonify({"error": "Unauthorized"}), 403
 
     data_user = {
         "id": user.id,
@@ -30,8 +32,8 @@ def dashboard():
         "created_at": user.created_at,
     }
     return render_template(
-        "users/dashboard/dashboard.html", 
-        user=data_user, 
+        "dashboard/dashboard.html",
+        user=data_user,
     ), 200
 
 @moderator_bp.route("/dashboard/modify/<file_id>", methods=["GET"])
@@ -39,42 +41,53 @@ def dashboard():
 def modify_file(file_id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
-    role = user.role
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-    if file_id not in user.uploaded_files or role not in ["admin", "moderator"]:
-        return jsonify({"Unauthorized": "File not found in user's uploads"}), 403
+    if user.role not in ["admin", "moderator"]:
+        return jsonify({"error": "Unauthorized"}), 403
 
-    metadata_path = Path("matiere").rglob(f"{file_id}.json")
-    metadata = load_json_file(next(metadata_path)) if metadata_path else {}
+    metadata_path = find_metadata_path(file_id)
+    if metadata_path is None:
+        return jsonify({"error": "Metadata not found for the specified file"}), 404
 
-    return render_template("users/modify/modify.html", metadata=metadata), 200
+    metadata = load_json_file(metadata_path)
+    if not metadata:
+        return jsonify({"error": "Invalid file metadata"}), 404
 
-
+    return render_template("modify/modify.html", metadata=metadata), 200
 @moderator_bp.route("/dashboard/modify/save/<file_id>", methods=["POST"])
 @jwt_required()
 def save_modified_file(file_id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
-
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    role = user.role
+    if user.role not in ["admin", "moderator"]:
+        return jsonify({"error": "Unauthorized"}), 403
 
-    if role not in ["admin", "moderator"]:
-        return jsonify({
-            "error": "Unauthorized: Moderator privileges required"
-        }), 403
+    old_metadata_path = find_metadata_path(file_id)
+    if old_metadata_path is None:
+        return jsonify({"error": "Metadata not found for the specified file"}), 404
+    old_metadata_path = old_metadata_path.resolve()
 
-    # Transition to multipart/form-data
+    old_metadata = load_json_file(old_metadata_path)
+    required_metadata = ("author", "filename", "original_filename")
+    if not old_metadata or any(not old_metadata.get(key) for key in required_metadata):
+        return jsonify({"error": "Invalid file metadata"}), 404
+
+    owner = User.query.filter_by(username=old_metadata["author"]).first()
+    if not owner:
+        return jsonify({"error": "File owner not found"}), 404
+    if file_id not in (owner.uploaded_files or []):
+        return jsonify({"error": "File not found in owner's uploads"}), 404
+
     matiere = request.form.get("matiere")
     classe = request.form.get("classe")
     specialite = request.form.get("specialite")
-    title = request.form.get("title")
-    desc = request.form.get("desc")
-    stored_filename = request.form.get("stored_filename")
-    author = request.form.get("author")
-    original_filename = request.form.get("original_filename")
+    title = request.form.get("title", old_metadata.get("title"))
+    desc = request.form.get("desc", old_metadata.get("desc"))
 
     if not all([matiere, classe, specialite]):
         return jsonify({"error": "Missing required metadata fields"}), 400
@@ -88,42 +101,36 @@ def save_modified_file(file_id):
             "error": "Invalid matiere, classe, or specialite"
         }), 400
 
-    # Reconstruct metadata object
     metadata = {
-        "id": file_id, 
+        "id": file_id,
         "title": title,
         "desc": desc,
         "matiere": matiere,
         "classe": classe,
         "specialite": specialite,
-        "author": author,
-        "filename": stored_filename,
-        "original_filename": original_filename
+        "author": old_metadata["author"],
+        "filename": old_metadata["filename"],
+        "original_filename": old_metadata["original_filename"]
     }
 
-    # Validate an optional uploaded file
     uploaded_file = request.files.get("file")
-    file_path = None
-    stored_filename = None
+    old_file_path = (Path("uploads") / old_metadata["filename"]).resolve()
+    uploads_dir = Path("uploads").resolve()
+    if not old_file_path.is_relative_to(uploads_dir):
+        return jsonify({"error": "Invalid existing file path"}), 400
 
-    if uploaded_file:
-        # Supprimer l'ancien fichier physique s'il existe
-        old_file_path = Path("uploads") / metadata["filename"]
-        if old_file_path.exists():
-            old_file_path.unlink()
-
+    new_file_path = None
+    if uploaded_file and uploaded_file.filename:
         filename = secure_filename(uploaded_file.filename or "")
         if not filename:
             return jsonify({"error": "Invalid filename"}), 400
 
-        stored_filename = f"{file_id}_{filename}"
-        file_path = Path("uploads") / stored_filename
-
-        # Sécurité : vérifier que le fichier est bien dans uploads/
-        if not file_path.resolve().is_relative_to(Path("uploads").resolve()):
+        metadata["filename"] = f"{file_id}_{filename}"
+        metadata["original_filename"] = filename
+        new_file_path = (uploads_dir / metadata["filename"]).resolve()
+        if not new_file_path.is_relative_to(uploads_dir):
             return jsonify({"error": "Invalid file path"}), 400
 
-    # Prepare the metadata path
     base_dir = Path("matiere").resolve()
     metadata_path = (
         base_dir
@@ -135,33 +142,45 @@ def save_modified_file(file_id):
 
     if not metadata_path.is_relative_to(base_dir):
         return jsonify({"error": "Invalid path"}), 400
+    if not metadata_path.parent.is_dir():
+        return jsonify({"error": "Destination category does not exist"}), 404
 
+    original_metadata = dict(old_metadata)
     try:
-        # Save the optional file
-        if uploaded_file and file_path:
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            uploaded_file.save(file_path)
-
-
-        # Save the JSON metadata
+        if new_file_path:
+            uploaded_file.save(new_file_path)
         save_json_file(metadata_path, metadata)
 
-        # Update the database
-        if user.uploaded_metadatas is None:
-            user.uploaded_metadatas = {}
+        if owner.uploaded_metadatas is None:
+            owner.uploaded_metadatas = {}
 
-        user.uploaded_metadatas[file_id] = metadata
-        flag_modified(user, "uploaded_metadatas")
-
+        owner.uploaded_metadatas[file_id] = {
+            "id": file_id,
+            "filename": metadata["filename"],
+            "matiere": matiere,
+            "classe": classe,
+            "specialite": specialite
+        }
+        flag_modified(owner, "uploaded_metadatas")
         db.session.commit()
 
     except Exception:
         db.session.rollback()
-
-        # In production, log the exception here.
+        current_app.logger.exception("Failed to save moderator file changes")
+        if metadata_path != old_metadata_path and metadata_path.exists():
+            metadata_path.unlink()
+        elif old_metadata_path.exists():
+            save_json_file(old_metadata_path, original_metadata)
+        if new_file_path and new_file_path != old_file_path and new_file_path.exists():
+            new_file_path.unlink()
         return jsonify({
             "error": "Failed to save metadata or file"
         }), 500
+
+    if old_metadata_path != metadata_path and old_metadata_path.exists():
+        old_metadata_path.unlink()
+    if new_file_path and new_file_path != old_file_path and old_file_path.exists():
+        old_file_path.unlink()
 
     return jsonify({
         "message": "Metadata and file updated successfully"
@@ -172,40 +191,54 @@ def save_modified_file(file_id):
 def delete_file(file_id):
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
-    role = user.role
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-    if file_id not in user.uploaded_files or role not in ["admin", "moderator"]:
-        return jsonify({"Unauthorized": "File not found in user's uploads"}), 403
+    if user.role not in ["admin", "moderator"]:
+        return jsonify({"error": "Unauthorized"}), 403
 
-    metadata_path = Path("matiere").rglob(f"{file_id}.json")
-    if not metadata_path:
+    metadata_path = find_metadata_path(file_id)
+    if metadata_path is None:
         return jsonify({"error": "Metadata not found for the specified file"}), 404
 
     metadata = load_json_file(metadata_path)
+    if not metadata:
+        return jsonify({"error": "Invalid file metadata"}), 404
 
-    stored_filename = metadata["filename"]
-    matiere = secure_filename(metadata["matiere"])
-    classe = secure_filename(metadata["classe"])
-    specialite = secure_filename(metadata["specialite"])
+    user_author = User.query.filter_by(username=metadata.get("author")).first()
+    if not user_author:
+        return jsonify({"error": "File owner not found"}), 404
+    if file_id not in (user_author.uploaded_files or []):
+        return jsonify({"error": "File not found in owner's uploads"}), 404
 
-    if not matiere or not classe or not specialite:
-        return jsonify({"error": "Invalid matiere, classe, or specialite"}), 400
-    
-    directory = Path("matiere") / matiere / classe / specialite
-    file_path = Path("uploads") / stored_filename
-    metadata_path = directory / f"{file_id}.json"
+    stored_filename = metadata.get("filename")
+    if (
+        not isinstance(stored_filename, str)
+        or not stored_filename
+        or secure_filename(stored_filename) != stored_filename
+    ):
+        return jsonify({"error": "Invalid stored filename"}), 400
 
-    if file_path.exists():
-        file_path.unlink()
+    base_dir = Path("matiere").resolve()
+    metadata_path = metadata_path.resolve()
+    if not metadata_path.is_relative_to(base_dir):
+        return jsonify({"error": "Invalid metadata path"}), 400
 
-    if metadata_path.exists():
-        metadata_path.unlink()
-    user_author = User.query.filter_by(username=metadata["author"])
+    uploads_dir = Path("uploads").resolve()
+    file_path = (uploads_dir / stored_filename).resolve()
+    if not file_path.is_relative_to(uploads_dir):
+        return jsonify({"error": "Invalid stored file path"}), 400
+
     user_author.uploaded_files.remove(file_id)
-    del user_author.uploaded_metadatas[file_id]
+    user_author.uploaded_metadatas = user_author.uploaded_metadatas or {}
+    user_author.uploaded_metadatas.pop(file_id, None)
     flag_modified(user_author, "uploaded_files")
     flag_modified(user_author, "uploaded_metadatas")
     db.session.commit()
+
+    if file_path.exists():
+        file_path.unlink()
+    metadata_path.unlink()
 
     return jsonify({"message": "File and its metadata deleted successfully"}), 200
 
@@ -214,6 +247,9 @@ def delete_file(file_id):
 def ban_user(user_id):
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
+
+    if not current_user:
+        return jsonify({"error": "User not found"}), 404
 
     if current_user.role not in ["admin", "moderator"]:
         return jsonify({"error": "Unauthorized"}), 403
@@ -234,6 +270,9 @@ def unban_user(user_id):
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
 
+    if not current_user:
+        return jsonify({"error": "User not found"}), 404
+
     if current_user.role not in ["admin", "moderator"]:
         return jsonify({"error": "Unauthorized"}), 403
 
@@ -248,4 +287,3 @@ def unban_user(user_id):
     return jsonify({"message": f"User {user_to_unban.username} has been unbanned."}), 200
 
     
-

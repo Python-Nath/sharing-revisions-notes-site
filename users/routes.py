@@ -45,7 +45,7 @@ def dashboard():
                 uploaded_metadatas[file_id] = load_json_file(path)
 
     for file_id in downloaded_files:
-        cached_meta = user.downloaded_metadatas.get(file_id)
+        cached_meta = user.download_metadatas.get(file_id)
         if cached_meta:
             path = os.path.join("matiere", cached_meta["matiere"], cached_meta["classe"], cached_meta["specialite"], f"{file_id}.json")
             if os.path.exists(path):
