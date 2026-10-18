@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 
 from pathlib import Path
+import uuid
 from sqlalchemy.orm.attributes import flag_modified
 
 from utils.json_utils import save_json_file, load_json_file
@@ -73,8 +74,21 @@ def save_modified_file(file_id):
     old_metadata_path = old_metadata_path.resolve()
 
     old_metadata = load_json_file(old_metadata_path)
-    required_metadata = ("author", "filename", "original_filename")
-    if not old_metadata or any(not old_metadata.get(key) for key in required_metadata):
+    if (
+        not isinstance(old_metadata, dict)
+    ):
+        return jsonify({"error": "Invalid file metadata"}), 404
+
+    old_stored_filename = old_metadata.get("filename")
+    old_original_filename = old_metadata.get("original_filename")
+    if (
+        not old_metadata.get("author")
+        or not isinstance(old_stored_filename, str)
+        or not old_stored_filename
+        or secure_filename(old_stored_filename) != old_stored_filename
+        or not isinstance(old_original_filename, str)
+        or not old_original_filename
+    ):
         return jsonify({"error": "Invalid file metadata"}), 404
 
     owner = User.query.filter_by(username=old_metadata["author"]).first()
@@ -109,13 +123,13 @@ def save_modified_file(file_id):
         "classe": classe,
         "specialite": specialite,
         "author": old_metadata["author"],
-        "filename": old_metadata["filename"],
-        "original_filename": old_metadata["original_filename"]
+        "filename": old_stored_filename,
+        "original_filename": old_original_filename
     }
 
     uploaded_file = request.files.get("file")
-    old_file_path = (Path("uploads") / old_metadata["filename"]).resolve()
     uploads_dir = Path("uploads").resolve()
+    old_file_path = (uploads_dir / old_stored_filename).resolve()
     if not old_file_path.is_relative_to(uploads_dir):
         return jsonify({"error": "Invalid existing file path"}), 400
 
@@ -130,6 +144,9 @@ def save_modified_file(file_id):
         new_file_path = (uploads_dir / metadata["filename"]).resolve()
         if not new_file_path.is_relative_to(uploads_dir):
             return jsonify({"error": "Invalid file path"}), 400
+        if new_file_path == old_file_path:
+            metadata["filename"] = f"{file_id}_{uuid.uuid4().hex}_{filename}"
+            new_file_path = (uploads_dir / metadata["filename"]).resolve()
 
     base_dir = Path("matiere").resolve()
     metadata_path = (
@@ -162,6 +179,20 @@ def save_modified_file(file_id):
             "specialite": specialite
         }
         flag_modified(owner, "uploaded_metadatas")
+
+        for download_owner in User.query.all():
+            download_metadatas = download_owner.download_metadatas or {}
+            if file_id in download_metadatas:
+                download_metadatas[file_id] = {
+                    "id": file_id,
+                    "filename": metadata["filename"],
+                    "matiere": matiere,
+                    "classe": classe,
+                    "specialite": specialite
+                }
+                download_owner.download_metadatas = download_metadatas
+                flag_modified(download_owner, "download_metadatas")
+
         db.session.commit()
 
     except Exception:
@@ -202,7 +233,7 @@ def delete_file(file_id):
         return jsonify({"error": "Metadata not found for the specified file"}), 404
 
     metadata = load_json_file(metadata_path)
-    if not metadata:
+    if not isinstance(metadata, dict):
         return jsonify({"error": "Invalid file metadata"}), 404
 
     user_author = User.query.filter_by(username=metadata.get("author")).first()

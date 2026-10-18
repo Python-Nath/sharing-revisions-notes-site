@@ -1,4 +1,4 @@
-from flask import Flask, request, send_from_directory, render_template
+from flask import Flask, jsonify, request, send_from_directory, render_template
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm.attributes import flag_modified
@@ -10,9 +10,9 @@ from moderator.routes import moderator_bp
 
 import os
 import uuid
-import secrets
 from pathlib import Path
 from datetime import timedelta
+import secrets
 
 from utils.json_utils import load_json_file, save_json_file
 from database.model import User, db
@@ -20,7 +20,7 @@ from database.model import User, db
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
-app.config["JWT_SECRET_KEY"] = secrets.token_urlsafe(32)
+app.config["JWT_SECRET_KEY"] = secrets.token_urlsafe(64)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_COOKIE_SECURE"] = False  # Set to True in production with HTTPS
@@ -32,6 +32,20 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 jwt = JWTManager(app)
 db.init_app(app)
+
+with app.app_context():
+    db.create_all()
+
+
+@jwt.token_in_blocklist_loader
+def is_token_revoked(jwt_header, jwt_payload):
+    user = User.query.get(jwt_payload["sub"])
+    return user is None or user.is_ban
+
+
+@jwt.revoked_token_loader
+def handle_revoked_token(jwt_header, jwt_payload):
+    return jsonify({"error": "User is unavailable or banned"}), 401
 
 
 SAVE_FILES_FOLDER = "uploads"
@@ -160,11 +174,24 @@ def download_file(matiere, classe, specialite, file_id):
         return {"error": "File not found"}, 404
 
     metadata = load_json_file(metadata_path)
-    if not metadata or not metadata.get("filename") or not metadata.get("original_filename"):
+    if not isinstance(metadata, dict):
         return {"error": "Invalid file metadata"}, 404
 
-    stored_filename = metadata["filename"]
-    original_filename = metadata["original_filename"]
+    stored_filename = metadata.get("filename")
+    original_filename = metadata.get("original_filename")
+    if (
+        not isinstance(stored_filename, str)
+        or not stored_filename
+        or secure_filename(stored_filename) != stored_filename
+        or not isinstance(original_filename, str)
+        or not original_filename
+    ):
+        return {"error": "Invalid file metadata"}, 404
+
+    uploads_dir = Path(SAVE_FILES_FOLDER).resolve()
+    file_path = (uploads_dir / stored_filename).resolve()
+    if not file_path.is_relative_to(uploads_dir) or not file_path.is_file():
+        return {"error": "File not found"}, 404
 
     user_id = get_jwt_identity()
     if user_id:
@@ -172,8 +199,9 @@ def download_file(matiere, classe, specialite, file_id):
         if not user:
             return {"error": "User not found"}, 404
         user.download_ids = user.download_ids or []
-        user.download_ids.append(file_id)
-        flag_modified(user, "download_ids")
+        if file_id not in user.download_ids:
+            user.download_ids.append(file_id)
+            flag_modified(user, "download_ids")
         user.download_metadatas = user.download_metadatas or {}
         metadata_user = {
             "id": file_id,
