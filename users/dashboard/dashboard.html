@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compte - Sharing Revisions &amp; Notes</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="entete">
+    <div class="largeur">
+      <a class="logo" href="accueil.html">Sharing Revisions &amp; Notes</a>
+      <nav>
+        <a href="accueil.html">Accueil</a>
+        <a href="compte.html" class="actif">Compte</a>
+        <a href="ajouter.html">Ajouter des fiches</a>
+        <a href="chercher.html">Chercher des fiches</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="largeur">
+    <h1>Compte</h1>
+    <p id="status"></p>
+
+    <section id="zone-connexion" class="bloc">
+      <h2>Se connecter</h2>
+      <form id="connexion">
+        <p>
+          <label for="mdp">Mot de passe</label>
+          <input type="password" id="mdp" autocomplete="current-password" required>
+        </p>
+        <button type="submit">Se connecter</button>
+      </form>
+    </section>
+
+    <section id="zone-connecte" class="bloc" hidden>
+      <h2 id="titre-connecte"></h2>
+      <div class="actions">
+        <a class="bouton" href="/espace">Aller à mon espace</a>
+        <button type="button" id="quitter" class="bouton-clair">Se déconnecter</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="common.js"></script>
+  <script src="compte.js"></script>
+</body>
+</html>
