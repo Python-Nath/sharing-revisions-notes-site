@@ -1,63 +1,46 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sharing Revisions & Notes</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-  <h1>Sharing Revisions & Notes</h1>
-  <p id="status"></p>
+{% extends "base.html" %}
+{% block titre %}Accueil — Fiches de révision{% endblock %}
+{% block contenu %}
+  <section class="intro">
+    <h1>Fiches de révision</h1>
+    <p id="salut" class="salut"></p>
+    <p>Choisis un cours. Les fiches s'affichent tout de suite. La publication demande un compte.</p>
+  </section>
 
-  <!-- View 1: Selection -->
-  <div id="view-selection" class="view">
-    <h2>1. Choix du cours</h2>
-    <label for="matiere">Matière</label>
-    <select id="matiere"><option value="">-- Choisir --</option></select>
+  <section class="panneau">
+    <h2>Cours</h2>
+    <div id="selecteur" class="selecteur"></div>
+  </section>
 
-    <label for="classe">Classe</label>
-    <select id="classe" disabled><option value="">-- Choisir --</option></select>
+  <p id="statut" class="statut" role="status"></p>
 
-    <label for="specialite">Spécialité</label>
-    <select id="specialite" disabled><option value="">-- Choisir --</option></select>
+  <section class="panneau">
+    <h2>Fiches disponibles</h2>
+    <div id="fichiers" class="liste"></div>
+  </section>
 
-    <h2>2. Récapitulatif</h2>
-    <p id="summary">Veuillez sélectionner un cours.</p>
-    <button id="btn-next" disabled>Continuer</button>
-  </div>
-
-  <!-- View 2: Action Choice -->
-  <div id="view-choice" class="view hidden">
-    <h2>Récapitulatif de votre choix</h2>
-    <p id="choice-summary"></p>
-    <div class="actions">
-      <button id="btn-go-download">Télécharger des fiches</button>
-      <button id="btn-go-upload">Envoyer une fiche</button>
-      <button id="btn-back-selection">Retour</button>
-    </div>
-  </div>
-
-  <!-- View 3: Downloads -->
-  <div id="view-download" class="view hidden">
-    <h2>Fichiers disponibles</h2>
-    <div id="files"></div>
-    <button id="btn-back-choice">Retour au choix</button>
-  </div>
-
-  <!-- View 4: Upload -->
-  <div id="view-upload" class="view hidden">
-    <h2>Envoyer un fichier</h2>
-    <form id="upload-form">
-      <p><label for="file">Fichier</label> <input type="file" id="file" name="file" required></p>
-      <p><label for="title">Titre</label> <input type="text" id="title" name="title" required></p>
-      <p><label for="author">Auteur</label> <input type="text" id="author" name="author" required></p>
-      <p><label for="desc">Description</label> <textarea id="desc" name="desc" rows="3" required></textarea></p>
-      <button type="submit">Envoyer</button>
+  <section class="panneau">
+    <h2>Publier une fiche</h2>
+    <p id="invite-connexion" hidden>
+      <a href="/auth/login-page?next=/accueil">Connecte-toi</a> pour publier dans ce cours.
+    </p>
+    <!-- L'auteur n'est pas demandé : le serveur enregistre l'identifiant du compte. -->
+    <form id="form-envoi" hidden>
+      <label class="champ">Fichier
+        <input type="file" name="file" required
+          accept=".pdf,.txt,.md,.csv,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.odp,.ods,.zip">
+      </label>
+      <label class="champ">Titre
+        <input type="text" name="title" required maxlength="120" autocomplete="off">
+      </label>
+      <label class="champ">Description
+        <textarea name="desc" required maxlength="2000" rows="4"></textarea>
+      </label>
+      <p class="note">PDF, image, document ou zip. 100 Mo maximum. Le HTML n'est pas accepté.</p>
+      <button class="bouton" type="submit">Publier</button>
     </form>
-    <button id="btn-back-choice-upload">Retour au choix</button>
-  </div>
-
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
-</body>
-</html>
+  </section>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='accueil.js') }}"></script>
+{% endblock %}

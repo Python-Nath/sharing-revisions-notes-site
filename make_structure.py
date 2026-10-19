@@ -87,11 +87,16 @@ STRUCTURE = {
 
 
 def make_structure(structure):
-    """Crée l'arborescence à partir de la structure par classe."""
+    """Crée l'arborescence à partir de la structure par classe.
+
+    L'ordre des dossiers est matiere / matière / classe / spécialité,
+    le même que celui lu par les routes /info et /upload.
+    """
 
     for classe, matieres in structure.items():
         for matiere, specialites in matieres.items():
             for specialite in specialites:
+                # exist_ok : relancer le script n'efface pas les fiches déjà déposées.
                 chemin = os.path.join("matiere", matiere, classe, specialite)
                 os.makedirs(chemin, exist_ok=True)
 

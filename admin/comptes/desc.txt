@@ -1,2 +1,0 @@
-gestion des comptes admins pour le faire devenir modérateur ou admin
-pas encore coder 

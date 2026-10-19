@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }} — Fiches de révision{% endblock %}
+{% block contenu %}
+  <section class="panneau etroit">
+    <h1>{{ titre }}</h1>
+    <p>Auteur enregistré : {{ metadata.author }}</p>
+    <form id="form-modifier" data-save-url="{{ save_url }}" data-retour-url="{{ retour_url }}">
+      <div id="selecteur" class="selecteur"></div>
+      <label class="champ">Titre
+        <input type="text" name="title" required maxlength="120" value="{{ metadata.title }}">
+      </label>
+      <label class="champ">Description
+        <textarea name="desc" required maxlength="2000" rows="5">{{ metadata.desc }}</textarea>
+      </label>
+      <label class="champ">Remplacer le fichier (facultatif)
+        <input type="file" name="file"
+          accept=".pdf,.txt,.md,.csv,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.odp,.ods,.zip">
+      </label>
+      <p class="note">Fichier actuel : {{ metadata.original_filename }}</p>
+      <div class="actions">
+        <button class="bouton" type="submit">Enregistrer</button>
+        <a class="bouton bouton-secondaire" href="{{ retour_url }}">Annuler</a>
+      </div>
+    </form>
+    <p id="statut" class="statut" role="status"></p>
+  </section>
+  <script id="fiche-data" type="application/json">{{ metadata|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='modifier.js') }}"></script>
+{% endblock %}

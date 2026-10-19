@@ -1,43 +1,43 @@
-from flask_sqlalchemy import SQLAlchemy
+"""Modèle des comptes.
+
+Les fichiers eux-mêmes restent dans uploads/ et matiere/.
+Ici on ne garde que l'identité, le rôle, et la liste des fiches liées au compte.
+"""
+
 import uuid
+
+from flask_sqlalchemy import SQLAlchemy
+
 
 db = SQLAlchemy()
 
+
 def generate_uuid():
+    """Identifiant de compte, distinct de l'identifiant d'une fiche."""
     return str(uuid.uuid4())
 
+
 class User(db.Model):
+    """Un élève, un modérateur ou un administrateur."""
+
     __tablename__ = "users"
 
     id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
     name = db.Column(db.String(100), nullable=False)
     surname = db.Column(db.String(100), nullable=False)
     username = db.Column(db.String(80), unique=True, nullable=False)
+    # Hash Werkzeug, jamais le mot de passe en clair.
     password = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default="user")  # Default role is 'user'
+    # user, moderator ou admin. La valeur est relue à chaque requête.
+    role = db.Column(db.String(20), nullable=False, default="user")
     is_ban = db.Column(db.Boolean, nullable=False, default=False)
-    download_ids = db.Column(db.JSON, nullable=True, default=list)  # Store download information as JSON
-    download_metadatas = db.Column(db.JSON, nullable=True, default=dict)  # Store download metadata as JSON
-    uploaded_files = db.Column(db.JSON, nullable=True, default=list)  # Store uploaded files as JSON
-    uploaded_metadatas = db.Column(db.JSON, nullable=True, default=dict)  # Store uploaded metadata as JSON
-
-    # email = db.Column(db.String(120), unique=True, nullable=False)
+    # Listes JSON : SQLAlchemy appelle list() et dict() pour chaque nouvelle ligne.
+    download_ids = db.Column(db.JSON, nullable=True, default=list)
+    download_metadatas = db.Column(db.JSON, nullable=True, default=dict)
+    uploaded_files = db.Column(db.JSON, nullable=True, default=list)
+    uploaded_metadatas = db.Column(db.JSON, nullable=True, default=dict)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
     def __repr__(self):
         return f"<User {self.username}>"
-
-""" class Files(db.Model):
-    __tablename__ = "files"
-
-    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
-    title = db.Column(db.String(200), nullable=False)
-    author = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    filename = db.Column(db.String(200), nullable=False)  # Stored filename
-    original_filename = db.Column(db.String(200), nullable=False)  # Original filename
-    matiere = db.Column(db.String(100), nullable=False)
-    classe = db.Column(db.String(100), nullable=False)
-    specialite = db.Column(db.String(100), nullable=False)
-    uploaded_at = db.Column(db.DateTime, server_default=db.func.now()) """

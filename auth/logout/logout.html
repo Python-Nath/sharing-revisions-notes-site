@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titre %}Déconnexion — Fiches de révision{% endblock %}
+{% block contenu %}
+  <section class="panneau etroit">
+    <h1>Déconnexion</h1>
+    <p>À bientôt, {{ user.name }} {{ user.surname }}.</p>
+    <form id="form-sortie">
+      <button class="bouton" type="submit">Se déconnecter</button>
+    </form>
+    <p id="statut" class="statut" role="status"></p>
+    <p><a href="{{ retour }}">Rester connecté</a></p>
+  </section>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('auth.static', filename='logout.js') }}"></script>
+{% endblock %}

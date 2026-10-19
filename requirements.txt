@@ -1,3 +1,4 @@
+# Application web, session par cookie, comptes SQLite, serveur de production.
 flask
 flask-jwt-extended
 flask-sqlalchemy

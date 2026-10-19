@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titre %}Connexion — Fiches de révision{% endblock %}
+{% block contenu %}
+  <section class="panneau etroit">
+    <h1>Connexion</h1>
+    <p>Utilise le compte créé par <code>init_users.py</code>.</p>
+    <form id="form-login">
+      <label class="champ">Identifiant
+        <input type="text" name="username" required maxlength="80" autocomplete="username" autofocus>
+      </label>
+      <label class="champ">Mot de passe
+        <input type="password" name="password" required maxlength="200" autocomplete="current-password">
+      </label>
+      <button class="bouton" type="submit">Entrer</button>
+    </form>
+    <p id="statut" class="statut" role="status"></p>
+    <p><a href="/accueil">Retour à l'accueil</a></p>
+  </section>
+  <script id="login-config" type="application/json">{{ {"next": next_url}|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('auth.static', filename='login.js') }}"></script>
+{% endblock %}

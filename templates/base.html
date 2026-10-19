@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titre %}Fiches de révision{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <!-- Le lien d'évitement sert à sauter le menu au clavier. -->
+  <a class="passer" href="#contenu">Aller au contenu</a>
+  <header class="barre">
+    <a class="marque" href="/accueil">Fiches</a>
+    <nav class="menu" aria-label="Navigation">
+      <a href="/accueil">Accueil</a>
+      <span id="nav-compte"></span>
+    </nav>
+  </header>
+  <main id="contenu">
+    {% block contenu %}{% endblock %}
+  </main>
+  <footer class="pied">Partage de fiches entre élèves</footer>
+  <script src="{{ url_for('static', filename='common.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

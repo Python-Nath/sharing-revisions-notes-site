@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block titre %}Erreur — Fiches de révision{% endblock %}
+{% block contenu %}
+  <section class="panneau etroit">
+    <h1>Oups</h1>
+    <p>{{ message }}</p>
+    <p><a class="bouton" href="/accueil">Retour à l'accueil</a></p>
+  </section>
+{% endblock %}

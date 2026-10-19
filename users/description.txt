@@ -1,2 +1,0 @@
-In dashboard the is the panel control of the user
-In modify there is the modify editor for modify your file

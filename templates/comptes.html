@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }} — Fiches de révision{% endblock %}
+{% block contenu %}
+  <section class="intro">
+    <h1>{{ titre }}</h1>
+    <p>Les actions impossibles pour ton rôle ne sont pas proposées. Le serveur les refuse aussi.</p>
+    <p><a class="bouton bouton-secondaire" href="{{ prefix }}/dashboard">Retour aux fiches</a></p>
+  </section>
+  <p id="statut" class="statut" role="status"></p>
+  <div class="table-scroll">
+    <table class="comptes">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Identifiant</th>
+          <th>Rôle</th>
+          <th>État</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="corps-comptes"></tbody>
+    </table>
+  </div>
+  <div id="comptes-config" data-prefix="{{ prefix }}" data-roles="{{ '1' if peut_roles else '0' }}" data-moi="{{ profil.id }}" hidden></div>
+  <script id="comptes-data" type="application/json">{{ comptes|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='comptes.js') }}"></script>
+{% endblock %}

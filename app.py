@@ -1,233 +1,227 @@
-from flask import Flask, jsonify, request, send_from_directory, render_template
-from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
-from werkzeug.utils import secure_filename
-from sqlalchemy.orm.attributes import flag_modified
+"""Point d'entrée du site de fiches.
 
-from info.routes import info_bp
-from users.routes import users_bp
-from auth.routes import auth_bp
-from moderator.routes import moderator_bp
-from admin.routes import admin_bp
+Les adresses restent celles du projet :
+    /accueil, /upload/..., /download/...
+    /info/..., /auth/..., /users/..., /moderator/..., /admin/...
+
+Le Python répond aux routes. Le JavaScript des pages appelle ces mêmes routes.
+"""
 
 import os
-import uuid
-from pathlib import Path
-from datetime import timedelta
 import secrets
+from datetime import timedelta
+from pathlib import Path
 
-from utils.json_utils import load_json_file, save_json_file
+from flask import Flask, jsonify, redirect, render_template, request, send_from_directory
+from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required
+from flask_jwt_extended.exceptions import JWTExtendedException
+from werkzeug.exceptions import HTTPException
+
+from admin.routes import admin_bp
+from auth.routes import auth_bp
 from database.model import User, db
+from info.routes import info_bp
+from moderator.routes import moderator_bp
+from users.routes import users_bp
+from utils.files import remember_download, resolve_download, store_upload
+from utils.http import error_response, redirect_to_login, wants_html
 
 
-app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
-app.config["JWT_SECRET_KEY"] = secrets.token_urlsafe(64)
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
-app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
-app.config["JWT_COOKIE_SECURE"] = False  # Set to True in production with HTTPS
-app.config["JWT_COOKIE_CSRF_PROTECT"] = True
-app.config["JWT_COOKIE_HTTPS_ONLY"] = False  # Set to True in production with HTTPS
+def _load_secret():
+    """Clé de signature des jetons.
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    Elle vient de l'environnement en production. En local, elle est créée une
+    fois dans instance/jwt_secret (dossier ignoré par git) pour que les
+    sessions survivent à un redémarrage.
+    """
+    from_env = os.environ.get("JWT_SECRET_KEY")
+    if from_env:
+        return from_env
 
-jwt = JWTManager(app)
-db.init_app(app)
+    folder = Path("instance")
+    folder.mkdir(exist_ok=True)
+    secret_file = folder / "jwt_secret"
+    if secret_file.is_file():
+        saved = secret_file.read_text(encoding="utf-8").strip()
+        if saved:
+            return saved
 
-with app.app_context():
-    db.create_all()
-
-
-@jwt.token_in_blocklist_loader
-def is_token_revoked(jwt_header, jwt_payload):
-    user = User.query.get(jwt_payload["sub"])
-    return user is None or user.is_ban
-
-
-@jwt.revoked_token_loader
-def handle_revoked_token(jwt_header, jwt_payload):
-    return jsonify({"error": "User is unavailable or banned"}), 401
+    generated = secrets.token_urlsafe(64)
+    secret_file.write_text(generated, encoding="utf-8")
+    try:
+        os.chmod(secret_file, 0o600)
+    except OSError:
+        pass
+    return generated
 
 
-SAVE_FILES_FOLDER = "uploads"
-os.makedirs(SAVE_FILES_FOLDER, exist_ok=True)
+def create_app():
+    """Construit l'application Flask, la base et les protections HTTP."""
+    app = Flask(__name__, static_folder="static", template_folder="templates")
+    secret = _load_secret()
 
-@app.route("/accueil")
-def accueil():
-    return render_template("index.html")
+    # 100 Mo, aligné sur la limite Nginx (client_max_body_size).
+    app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
+    app.secret_key = secret
+    app.config["JWT_SECRET_KEY"] = secret
+    app.config["JWT_ALGORITHM"] = "HS256"
+    # Une séance de révision tient dans la journée, sans cookie éternel.
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=8)
+    app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
+    # False en HTTP local. Mettre JWT_COOKIE_SECURE=1 derrière HTTPS.
+    app.config["JWT_COOKIE_SECURE"] = os.environ.get("JWT_COOKIE_SECURE", "0") == "1"
+    app.config["JWT_COOKIE_SAMESITE"] = "Lax"
+    app.config["JWT_COOKIE_CSRF_PROTECT"] = True
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URI", "sqlite:///users.db")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.json.ensure_ascii = False
 
-@app.route("/upload/<matiere>/<classe>/<specialite>", methods=["POST"])
-@jwt_required()
-def upload_file(matiere, classe, specialite):
+    jwt = JWTManager(app)
+    db.init_app(app)
+    Path("uploads").mkdir(exist_ok=True)
 
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    if not user:
-        return {"error": "User not found"}, 404
+    with app.app_context():
+        db.create_all()
 
-    # Vérification du dossier
-    base_dir = Path("matiere").resolve()
-    directory = (base_dir / matiere / classe / specialite).resolve()
+    @jwt.token_in_blocklist_loader
+    def token_revoked(_header, payload):
+        """Un ban, ou un compte supprimé, invalide le cookie déjà émis."""
+        user = db.session.get(User, payload.get("sub"))
+        return user is None or user.is_ban
 
-    if not directory.is_relative_to(base_dir) or not directory.is_dir():
-        return {"error": "Invalid path"}, 404
+    @jwt.unauthorized_loader
+    def missing_token(reason):
+        if wants_html():
+            return redirect_to_login()
+        if "csrf" in str(reason).lower():
+            return jsonify({"error": "Jeton de sécurité manquant. Recharge la page."}), 401
+        return jsonify({"error": "Connexion requise"}), 401
 
-    # Vérification du fichier
-    if "file" not in request.files:
-        return {"error": "No file part"}, 400
+    @jwt.invalid_token_loader
+    def invalid_token(_reason):
+        if wants_html():
+            return redirect_to_login()
+        return jsonify({"error": "Session invalide"}), 401
 
-    file = request.files["file"]
+    @jwt.expired_token_loader
+    def expired_token(_header, _payload):
+        if wants_html():
+            return redirect_to_login()
+        return jsonify({"error": "Session expirée"}), 401
 
-    if not file.filename:
-        return {"error": "No selected file"}, 400
+    @jwt.revoked_token_loader
+    def revoked_token(_header, _payload):
+        if wants_html():
+            return redirect_to_login()
+        return jsonify({"error": "Compte suspendu ou indisponible"}), 401
 
-    filename = secure_filename(file.filename)
+    @app.after_request
+    def security_headers(response):
+        """En-têtes qui limitent le sniffing, l'intégration dans une iframe et les fuites."""
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "same-origin"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; img-src 'self' data:; style-src 'self'; "
+            "script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        )
+        if request.path.startswith(("/users", "/admin", "/moderator", "/auth")):
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
-    if not filename:
-        return {"error": "Invalid filename"}, 400
+    @app.errorhandler(404)
+    def not_found(_error):
+        return error_response("Page introuvable", 404)
 
-    # Métadonnées
-    title = request.form.get("title")
-    author = request.form.get("author")
-    desc = request.form.get("desc")
+    @app.errorhandler(413)
+    def too_large(_error):
+        return error_response("Fichier trop volumineux (100 Mo maximum).", 413)
 
-    if not all([title, author, desc]):
-        return {
-            "error": "Missing title, author, or description"
-        }, 400
+    @app.errorhandler(Exception)
+    def unexpected(error):
+        # Les erreurs HTTP (404, 413...) ont déjà leur traitement.
+        # Celles du jeton aussi : Flask choisit le gestionnaire le plus précis.
+        if isinstance(error, JWTExtendedException):
+            # Filet de sécurité si le gestionnaire précis du jeton n'a pas répondu.
+            if wants_html():
+                return redirect_to_login()
+            if "csrf" in str(error).lower():
+                return jsonify({"error": "Jeton de sécurité manquant. Recharge la page."}), 401
+            return jsonify({"error": "Session invalide"}), 401
+        if isinstance(error, HTTPException):
+            return error_response(error.description or "Erreur", error.code or 500)
+        app.logger.exception("Erreur interne")
+        return error_response("Erreur interne", 500)
 
-    # Nom interne unique
-    file_id = str(uuid.uuid4())
-    stored_filename = f"{file_id}_{filename}"
+    @app.route("/")
+    def root():
+        """L'adresse nue ouvre l'accueil."""
+        return redirect("/accueil")
 
-    file_path = os.path.join(
-        SAVE_FILES_FOLDER,
-        stored_filename
-    )
+    @app.route("/accueil")
+    def accueil():
+        """Page principale : choisir un cours, lire ou publier."""
+        return render_template("index.html")
 
-    # Sauvegarde
-    file.save(file_path)
+    @app.route("/upload/<matiere>/<classe>/<specialite>", methods=["POST"])
+    @jwt_required()
+    def upload_file(matiere, classe, specialite):
+        """Publie une fiche. L'auteur enregistré est le compte connecté."""
+        user = db.session.get(User, get_jwt_identity())
+        if user is None:
+            return jsonify({"error": "Compte introuvable"}), 404
+        if user.is_ban:
+            return jsonify({"error": "Compte suspendu"}), 403
+        return store_upload(
+            user,
+            matiere,
+            classe,
+            specialite,
+            request.files.get("file"),
+            request.form.get("title"),
+            request.form.get("desc"),
+        )
 
-    metadata = {
-        "id": file_id,
-        "title": title,
-        "author": user.username,
-        "desc": desc,
-        "filename": stored_filename,
-        "original_filename": filename,
-        "matiere": matiere,
-        "classe": classe,
-        "specialite": specialite
-    }
+    @app.route("/download/<matiere>/<classe>/<specialite>/<file_id>", methods=["GET"])
+    @jwt_required(optional=True)
+    def download_file(matiere, classe, specialite, file_id):
+        """Envoie le fichier en téléchargement. La consultation reste ouverte sans compte.
 
-    metadata_path = os.path.join(
-        directory,
-        f"{file_id}.json"
-    )
+        Le nom d'origine est nettoyé, et le type annoncé est neutre, pour que le
+        navigateur n'exécute pas un document comme une page.
+        """
+        found, error = resolve_download(matiere, classe, specialite, file_id)
+        if error:
+            return error
 
-    save_json_file(metadata_path, metadata)
+        stored_filename, original_filename, cache = found
+        identity = get_jwt_identity()
+        if identity:
+            user = db.session.get(User, identity)
+            if user is not None and not user.is_ban:
+                remember_download(user, file_id, cache)
 
-    # Mise à jour de l'utilisateur
-    if user.uploaded_files is None:
-        user.uploaded_files = []
-    if user.uploaded_metadatas is None:
-        user.uploaded_metadatas = {}
+        response = send_from_directory(
+            "uploads",
+            stored_filename,
+            as_attachment=True,
+            download_name=original_filename,
+            mimetype="application/octet-stream",
+        )
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
 
-    user.uploaded_files.append(file_id)
-    flag_modified(user, "uploaded_files")
+    app.register_blueprint(info_bp)
+    app.register_blueprint(users_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(moderator_bp)
+    app.register_blueprint(admin_bp)
+    return app
 
-    metadata_user = {
-        "id": file_id,
-        "filename": stored_filename,
-        "matiere": matiere,
-        "classe": classe,
-        "specialite": specialite
-    }
 
-    user.uploaded_metadatas[file_id] = metadata_user
-    flag_modified(user, "uploaded_metadatas")
-    db.session.commit()
+app = create_app()
 
-    return {
-        "message": "File uploaded successfully",
-        "metadata": metadata
-    }, 201
-
-@app.route(
-    "/download/<matiere>/<classe>/<specialite>/<file_id>",
-    methods=["GET"]
-)
-@jwt_required(optional=True)
-def download_file(matiere, classe, specialite, file_id):
-
-    base_dir = Path("matiere").resolve()
-    directory = (base_dir / matiere / classe / specialite).resolve()
-
-    if not directory.is_relative_to(base_dir):
-        return {"error": "Invalid path"}, 400
-
-    metadata_path = os.path.join(
-        directory,
-        f"{file_id}.json"
-    )
-
-    if not os.path.isfile(metadata_path):
-        return {"error": "File not found"}, 404
-
-    metadata = load_json_file(metadata_path)
-    if not isinstance(metadata, dict):
-        return {"error": "Invalid file metadata"}, 404
-
-    stored_filename = metadata.get("filename")
-    original_filename = metadata.get("original_filename")
-    if (
-        not isinstance(stored_filename, str)
-        or not stored_filename
-        or secure_filename(stored_filename) != stored_filename
-        or not isinstance(original_filename, str)
-        or not original_filename
-    ):
-        return {"error": "Invalid file metadata"}, 404
-
-    uploads_dir = Path(SAVE_FILES_FOLDER).resolve()
-    file_path = (uploads_dir / stored_filename).resolve()
-    if not file_path.is_relative_to(uploads_dir) or not file_path.is_file():
-        return {"error": "File not found"}, 404
-
-    user_id = get_jwt_identity()
-    if user_id:
-        user = User.query.get(user_id)
-        if not user:
-            return {"error": "User not found"}, 404
-        user.download_ids = user.download_ids or []
-        if file_id not in user.download_ids:
-            user.download_ids.append(file_id)
-            flag_modified(user, "download_ids")
-        user.download_metadatas = user.download_metadatas or {}
-        metadata_user = {
-            "id": file_id,
-            "filename": stored_filename,
-            "matiere": matiere,
-            "classe": classe,
-            "specialite": specialite
-        }
-        user.download_metadatas[file_id] = metadata_user
-        flag_modified(user, "download_metadatas")
-        db.session.commit()
-        
-
-    return send_from_directory(
-        SAVE_FILES_FOLDER,
-        stored_filename,
-        as_attachment=True,
-        download_name=original_filename
-    )
-
-app.register_blueprint(info_bp)
-app.register_blueprint(users_bp)
-app.register_blueprint(auth_bp)
-app.register_blueprint(moderator_bp)
-app.register_blueprint(admin_bp)
 
 if __name__ == "__main__":
-	app.run(host="0.0.0.0", port=8000, debug=False)
+    # debug reste désactivé : le débogueur Flask exposé sur le réseau est une porte d'entrée.
+    app.run(host="0.0.0.0", port=8000, debug=False, use_reloader=False)

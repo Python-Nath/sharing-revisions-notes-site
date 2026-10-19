@@ -1,50 +1,206 @@
+/* Thème papier et encre. Une seule feuille pour toutes les pages. */
 
-body { 
-    font-family: sans-serif; 
-    max-width: 800px; 
-    margin: 2rem auto; 
-    padding: 0 1rem; 
-    line-height: 1.6;
+:root {
+  --encre: #1c2430;
+  --encre-douce: #4d5968;
+  --papier: #f4efe4;
+  --carte: #fffdf8;
+  --ligne: #e4d9c6;
+  --foret: #1d6b4f;
+  --foret-fonce: #14543d;
+  --danger: #8d2f2f;
+  --focus: #b86b12;
+  --ombre: 0 10px 30px rgba(48, 36, 18, 0.06);
 }
 
-.view { 
-    border: 1px solid #ccc; 
-    padding: 1.5rem; 
-    border-radius: 8px; 
-    background: #f9f9f9; 
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--encre);
+  background:
+    radial-gradient(circle at top left, rgba(29, 107, 79, 0.08), transparent 28rem),
+    var(--papier);
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+  line-height: 1.5;
 }
 
-.hidden { 
-    display: none; 
+h1, h2, .marque {
+  font-family: Georgia, "Iowan Old Style", Palatino, serif;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
-.file-card { 
-    border: 1px solid #ddd; 
-    padding: 1rem; 
-    margin-bottom: 1rem; 
-    border-radius: 4px; 
-    background: white; 
+a { color: var(--foret-fonce); }
+
+.passer {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  background: var(--encre);
+  color: white;
+  padding: 0.4rem 0.7rem;
 }
 
-.actions { 
-    display: flex; 
-    gap: 1rem; 
-    margin-top: 1rem; 
-}
-select, input, textarea { 
-    display: block; 
-    margin-bottom: 1rem; 
-    width: 100%; 
-    max-width: 400px; 
-    padding: 0.5rem; 
+.passer:focus { top: 0.5rem; }
+
+.barre {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 6vw;
+  border-bottom: 1px solid var(--ligne);
+  background: rgba(255, 253, 248, 0.92);
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
-button { 
-    padding: 0.5rem 1rem; 
-    cursor: pointer; 
+.marque {
+  color: var(--encre);
+  text-decoration: none;
+  font-size: 1.4rem;
 }
 
-#status { 
-    font-weight: bold; 
-    margin-bottom: 1rem; 
+.menu, #nav-compte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+  align-items: center;
+}
+
+.menu a { text-decoration: none; }
+
+.menu a:hover { text-decoration: underline; }
+
+main {
+  width: min(980px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+}
+
+.intro h1 { margin-bottom: 0.3rem; }
+
+.salut { color: var(--foret-fonce); font-weight: 650; }
+
+.panneau {
+  background: var(--carte);
+  border: 1px solid var(--ligne);
+  border-radius: 16px;
+  padding: 1.2rem;
+  margin: 1rem 0;
+  box-shadow: var(--ombre);
+}
+
+.etroit { width: min(100%, 34rem); margin-left: auto; margin-right: auto; }
+
+.selecteur, .champ { display: grid; gap: 0.35rem; }
+
+.selecteur { gap: 0.9rem; }
+
+.champ { margin: 0.8rem 0; }
+
+input, select, textarea {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #cbbfaa;
+  border-radius: 10px;
+  background: white;
+  color: var(--encre);
+  font: inherit;
+}
+
+textarea { resize: vertical; }
+
+input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.bouton, button.bouton {
+  display: inline-block;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  background: var(--foret);
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.bouton:hover { background: var(--foret-fonce); }
+
+.bouton:disabled { opacity: 0.6; cursor: wait; }
+
+.bouton-secondaire {
+  background: transparent;
+  color: var(--foret-fonce);
+  border: 1px solid var(--foret);
+}
+
+.bouton-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.actions, .ligne-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.fiche {
+  border: 1px solid var(--ligne);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 0.8rem 0;
+  background: #fff;
+}
+
+.fiche h3 { margin: 0 0 0.3rem; }
+
+.meta, .note, .fichier, .pied {
+  color: var(--encre-douce);
+}
+
+.statut { min-height: 1.4rem; font-weight: 650; }
+
+.statut.ok { color: var(--foret-fonce); }
+
+.statut.erreur { color: var(--danger); }
+
+.vide { color: var(--encre-douce); }
+
+.table-scroll { overflow-x: auto; }
+
+table.comptes {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--carte);
+}
+
+.comptes th, .comptes td {
+  text-align: left;
+  padding: 0.7rem;
+  border-bottom: 1px solid var(--ligne);
+  vertical-align: top;
+}
+
+.comptes select { min-width: 10rem; }
+
+.pied {
+  text-align: center;
+  padding: 1rem;
+}
+
+[hidden] { display: none !important; }
+
+@media (max-width: 700px) {
+  .barre { align-items: flex-start; flex-direction: column; }
+  main { width: min(100% - 1.2rem, 980px); }
 }

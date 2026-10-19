@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Propose de retirer les fiches déposées dans matiere/ et uploads/.
+# Les fichiers .gitkeep, qui gardent les dossiers vides dans git, sont conservés.
+
 FILES=$(find ./matiere ./uploads -type f ! -name '.gitkeep')
 
 if [ -z "$FILES" ]; then
