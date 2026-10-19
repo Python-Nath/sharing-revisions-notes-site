@@ -1,0 +1,605 @@
+/* =====================================================
+   Sharing Revisions & Notes - feuille de style
+   Sommaire :
+   1. Variables (couleurs, polices)
+   2. Base de la page
+   3. En-tête et menu
+   4. Titres et textes
+   5. Boutons
+   6. Formulaires
+   7. Sélecteur de cours
+   8. Recherche et fiches
+   9. Messages d'état
+   10. Mon espace (tableaux, statistiques)
+   ===================================================== */
+
+
+/* ---------- 1. Variables ----------
+   On change une couleur ici et elle change partout. */
+:root {
+  --creme: #f7f3eb;        /* fond de la page */
+  --encre: #1a3a5c;        /* bleu foncé : texte et boutons */
+  --encre-clair: #2a5a8c;  /* bleu plus clair : survol */
+  --gris: #5a5a5a;
+  --gris-clair: #e8e4dc;
+  --blanc: #fffcf7;        /* fond des cartes */
+  --bordure: #c8c0b0;
+  --erreur: #8b2e2e;
+  --ok: #2e6b3e;
+  --rayon: 3px;            /* arrondi des coins */
+  --fonte-titre: "Georgia", "Times New Roman", serif;
+  --fonte-corps: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+
+/* ---------- 2. Base de la page ---------- */
+
+/* Les marges internes sont comprises dans la largeur des éléments */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+  font-family: var(--fonte-corps);
+  background: var(--creme);
+  color: var(--encre);
+  min-height: 100vh;
+}
+
+/* Centre le contenu et limite sa largeur */
+.largeur {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+main.largeur {
+  padding-top: 1.75rem;
+  padding-bottom: 3rem;
+}
+
+/* Un élément avec l'attribut "hidden" disparaît toujours */
+[hidden] {
+  display: none !important;
+}
+
+
+/* ---------- 3. En-tête et menu ---------- */
+.entete {
+  background: var(--blanc);
+  border-bottom: 1px solid var(--bordure);
+  padding: 0.75rem 0;
+}
+
+.entete .largeur,
+.entete-espace {
+  display: flex;
+  flex-wrap: wrap;          /* le menu passe en dessous sur petit écran */
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.logo {
+  font-family: var(--fonte-titre);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--encre);
+  text-decoration: none;
+}
+
+.logo:hover {
+  color: var(--encre-clair);
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+nav a {
+  color: var(--gris);
+  text-decoration: none;
+  padding: 0.2rem 0;
+  border-bottom: 2px solid transparent;
+}
+
+nav a:hover {
+  color: var(--encre);
+}
+
+/* Lien de la page en cours : souligné et en gras */
+nav a.actif {
+  color: var(--encre);
+  border-bottom-color: var(--encre);
+  font-weight: 600;
+}
+
+/* Liens vers les autres espaces (page "Mon espace") */
+.espaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+
+.espaces .etiquette {
+  color: var(--gris);
+}
+
+.espaces a {
+  color: var(--encre-clair);
+}
+
+
+/* ---------- 4. Titres et textes ---------- */
+h1,
+h2,
+.fiche h3 {
+  font-family: var(--fonte-titre);
+  font-weight: 700;
+  color: var(--encre);
+}
+
+h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.75rem;
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin: 0 0 0.5rem;
+}
+
+.intro {
+  color: var(--gris);
+  margin: 0 0 1.5rem;
+  max-width: 38rem;
+}
+
+/* Petit texte gris sous un champ */
+.note-auto {
+  font-size: 0.8rem;
+  color: var(--gris);
+  margin: 0.25rem 0 0;
+}
+
+/* Texte "Aucun cours choisi" ; devient vert quand le choix est complet */
+.recap {
+  font-size: 0.95rem;
+  color: var(--gris);
+  margin: 0.5rem 0 0;
+}
+
+.recap.complet {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.compteur {
+  font-size: 0.9rem;
+  color: var(--gris);
+  margin: 0 0 0.75rem;
+}
+
+/* Espace en bas de page */
+.zone {
+  margin-bottom: 5rem;
+}
+
+/* Deux blocs côte à côte (accueil) */
+.deux-colonnes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+/* Sur petit écran : un bloc sous l'autre */
+@media (max-width: 560px) {
+  .deux-colonnes {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Carte blanche avec bordure */
+.bloc {
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 1.25rem;
+}
+
+.bloc p {
+  margin: 0 0 1rem;
+  color: var(--gris);
+  font-size: 0.95rem;
+}
+
+/* Liste des types de comptes */
+.types-comptes {
+  padding-left: 1.2rem;
+  color: var(--gris);
+}
+
+.types-comptes strong {
+  color: var(--encre);
+}
+
+
+/* ---------- 5. Boutons ---------- */
+
+/* Bouton principal (bleu plein) */
+.bouton,
+button[type="submit"] {
+  display: inline-block;
+  background: var(--encre);
+  color: var(--blanc);
+  border: none;
+  border-radius: var(--rayon);
+  padding: 0.5rem 1.1rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.bouton:hover,
+button[type="submit"]:hover:not(:disabled) {
+  background: var(--encre-clair);
+}
+
+/* Bouton secondaire (contour seulement) */
+.bouton-clair {
+  background: transparent;
+  color: var(--encre);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 0.35rem 0.85rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.bouton-clair:hover {
+  background: var(--gris-clair);
+}
+
+/* Bouton rouge pour supprimer (s'ajoute à .bouton-clair) */
+.bouton-danger {
+  color: var(--erreur);
+  border-color: var(--erreur);
+}
+
+.bouton-danger:hover {
+  background: #f3e3e3;
+}
+
+/* Bouton ou formulaire désactivé : grisé */
+button:disabled,
+fieldset:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Boutons alignés sur une ligne */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+
+/* ---------- 6. Formulaires ---------- */
+label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+/* Tous les champs ont la même apparence */
+input[type="text"],
+input[type="search"],
+input[type="file"],
+input[type="password"],
+textarea,
+select {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: var(--blanc);
+  color: var(--encre);
+}
+
+/* Les champs de texte prennent toute la largeur */
+input[type="text"],
+input[type="search"],
+input[type="file"],
+textarea {
+  width: 100%;
+}
+
+input[type="password"] {
+  width: 100%;
+  max-width: 22rem;
+}
+
+/* Contour bleu quand on clique dans un champ */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--encre);
+  outline-offset: 1px;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 5rem;
+}
+
+fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+fieldset p,
+.edition p {
+  margin: 0 0 1rem;
+}
+
+/* Formulaire "Ajouter un compte" : champs côte à côte */
+.formulaire-ligne {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.formulaire-ligne p {
+  margin: 0;
+}
+
+
+/* ---------- 7. Sélecteur de cours ---------- */
+#selecteur {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Une ligne : Matière, Classe ou Spécialité */
+.selecteur-niveau {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.selecteur-niveau .etiquette {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gris);
+  width: 100%;
+  margin-bottom: 0.15rem;
+}
+
+/* Un bouton de choix */
+.carte {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--blanc);
+  color: var(--encre);
+  font-size: 0.9rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.carte:hover {
+  border-color: var(--encre);
+  background: var(--gris-clair);
+}
+
+/* Bouton choisi : bleu plein */
+.carte.choisie {
+  background: var(--encre);
+  color: var(--blanc);
+  border-color: var(--encre);
+}
+
+/* Bouton bloqué (une seule possibilité) */
+.carte.disabled {
+  opacity: 0.55;
+  cursor: default;
+  pointer-events: none;
+}
+
+
+/* ---------- 8. Recherche et fiches ---------- */
+.recherche {
+  margin-bottom: 1rem;
+}
+
+/* Barre de recherche + choix du tri */
+.ligne-recherche {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ligne-recherche input {
+  flex: 1 1 16rem;
+}
+
+/* Bloc repliable "Filtrer par cours" */
+.filtre {
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  background: var(--blanc);
+  padding: 0.5rem 0.85rem;
+}
+
+.filtre summary {
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  list-style: none;
+}
+
+/* Cache la flèche par défaut de Chrome/Safari */
+.filtre summary::-webkit-details-marker {
+  display: none;
+}
+
+.filtre[open] summary {
+  margin-bottom: 0.75rem;
+}
+
+#effacer {
+  margin-top: 0.5rem;
+}
+
+/* Liste de fiches, les unes sous les autres */
+#resultats,
+.liste-fiches {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.liste-fiches {
+  margin-top: 0.75rem;
+}
+
+/* Une fiche */
+.fiche {
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 1rem 1.15rem;
+}
+
+.fiche h3 {
+  font-size: 1.1rem;
+  margin: 0 0 0.35rem;
+}
+
+/* Auteur, cours et date */
+.fiche .meta {
+  font-size: 0.85rem;
+  color: var(--gris);
+  margin: 0 0 0.5rem;
+}
+
+/* Description : garde les retours à la ligne */
+.fiche .desc {
+  font-size: 0.95rem;
+  margin: 0 0 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Nom et taille du fichier */
+.fiche .fichier {
+  font-size: 0.85rem;
+  color: var(--gris);
+  margin: 0 0 0.5rem;
+}
+
+.fiche a.telecharger {
+  display: inline-block;
+  background: var(--encre);
+  color: var(--blanc);
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--rayon);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.fiche a.telecharger:hover {
+  background: var(--encre-clair);
+}
+
+
+/* ---------- 9. Messages d'état ---------- */
+#status {
+  min-height: 1.4em;   /* évite que la page saute quand un message apparaît */
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+}
+
+#status.erreur {
+  color: var(--erreur);
+}
+
+#status.ok {
+  color: var(--ok);
+}
+
+#status.info {
+  color: var(--gris);
+}
+
+
+/* ---------- 10. Mon espace ---------- */
+
+/* Tableau des comptes */
+.tableau {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+}
+
+.tableau th,
+.tableau td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--gris-clair);
+  font-size: 0.95rem;
+}
+
+/* Grille de petites tuiles de statistiques */
+.grille-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.tuile {
+  display: flex;
+  flex-direction: column;
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 0.75rem 1rem;
+}
+
+/* Le grand chiffre */
+.tuile strong {
+  font-family: var(--fonte-titre);
+  font-size: 1.4rem;
+}
+
+.tuile span {
+  font-size: 0.85rem;
+  color: var(--gris);
+}
