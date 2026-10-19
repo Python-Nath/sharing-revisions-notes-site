@@ -1,4 +1,5 @@
 flask
+flask-jwt-extended
+flask-sqlalchemy
 gunicorn
 requests
-rich
