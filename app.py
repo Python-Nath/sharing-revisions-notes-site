@@ -2,7 +2,7 @@
 
 Les adresses restent celles du projet :
     /accueil, /upload/..., /download/...
-    /info/..., /auth/..., /users/..., /moderator/..., /admin/...
+    /info/..., /auth/..., /users/..., /moderator/..., /admin/..., /owner/...
 
 Le Python répond aux routes. Le JavaScript des pages appelle ces mêmes routes.
 """
@@ -22,6 +22,7 @@ from auth.routes import auth_bp
 from database.model import User, db
 from info.routes import info_bp
 from moderator.routes import moderator_bp
+from owner.routes import owner_bp
 from users.routes import users_bp
 from utils.files import remember_download, resolve_download, store_upload
 from utils.http import error_response, redirect_to_login, wants_html
@@ -85,9 +86,20 @@ def create_app():
 
     @jwt.token_in_blocklist_loader
     def token_revoked(_header, payload):
-        """Un ban, ou un compte supprimé, invalide le cookie déjà émis."""
+        """Un ban, une déconnexion, ou un compte supprimé, invalide le cookie déjà émis."""
+        from utils.presence import est_revoquee
+
         user = db.session.get(User, payload.get("sub"))
-        return user is None or user.is_ban
+        if user is None or user.is_ban:
+            return True
+        return est_revoquee(payload.get("jti"))
+
+    @app.before_request
+    def site_en_pause():
+        """Le propriétaire peut couper le site. Lui seul continue de passer."""
+        from utils.site_gate import bloquer_si_suspendu
+
+        return bloquer_si_suspendu()
 
     @jwt.unauthorized_loader
     def missing_token(reason):
@@ -118,6 +130,7 @@ def create_app():
     @app.after_request
     def security_headers(response):
         """En-têtes qui limitent le sniffing, l'intégration dans une iframe et les fuites."""
+        _noter_presence()
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "same-origin"
@@ -125,7 +138,7 @@ def create_app():
             "default-src 'self'; img-src 'self' data:; style-src 'self'; "
             "script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         )
-        if request.path.startswith(("/users", "/admin", "/moderator", "/auth")):
+        if request.path.startswith(("/users", "/admin", "/moderator", "/auth", "/owner")):
             response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -216,7 +229,27 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(moderator_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(owner_bp)
     return app
+
+
+def _noter_presence():
+    """Dernière activité de la session, si la requête a déjà vérifié un jeton."""
+    from flask_jwt_extended import get_jwt
+
+    from utils.presence import toucher_presence
+
+    try:
+        claims = get_jwt()
+    except Exception:
+        return
+    jti = claims.get("jti") if claims else None
+    if not jti or request.endpoint in ("static", "auth.static"):
+        return
+    try:
+        toucher_presence(jti)
+    except Exception:
+        app.logger.exception("Suivi de présence impossible")
 
 
 app = create_app()

@@ -8,9 +8,10 @@ des données (envoi, suppression, ban).
 import time
 from threading import Lock
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, current_app, jsonify, render_template, request
 from flask_jwt_extended import (
     create_access_token,
+    get_jwt,
     get_jwt_identity,
     jwt_required,
     set_access_cookies,
@@ -21,6 +22,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from database.model import User
 from utils.access import home_for_role, require_user
 from utils.http import safe_next_url
+from utils.presence import fermer_presence, ouvrir_presence
+from utils.site_gate import lire_etat
 from utils.users import public_profile
 
 
@@ -81,6 +84,24 @@ def login_succeeded(username):
         _ATTEMPTS.pop(_attempt_key(username), None)
 
 
+def etat_tentatives():
+    """Identifiants encore suivis, et ceux qui ont atteint le plafond."""
+    now = time.time()
+    plafond = _max_attempts()
+    bloques = []
+    suivis = 0
+    with _ATTEMPTS_LOCK:
+        for key, moments in _ATTEMPTS.items():
+            recents = [moment for moment in moments if now - moment < _WINDOW_SECONDS]
+            if not recents:
+                continue
+            suivis += 1
+            if len(recents) >= plafond:
+                bloques.append(key)
+    bloques.sort()
+    return {"bloques": bloques, "suivis": suivis}
+
+
 @auth_bp.route("/login", methods=["POST"])
 def login():
     """Vérifie l'identifiant et pose le cookie de session."""
@@ -110,8 +131,13 @@ def login():
     if user.is_ban:
         return jsonify({"error": "Compte suspendu"}), 403
 
+    if lire_etat()["suspended"] and user.role != "owner":
+        return jsonify({"error": "Le site est suspendu."}), 503
+
     login_succeeded(username)
     token = create_access_token(identity=user.id)
+    agent = request.headers.get("User-Agent") or ""
+    ouvrir_presence(user.id, token, agent)
     response = jsonify({
         "message": "Connexion réussie",
         "role": user.role,
@@ -136,7 +162,11 @@ def me():
 def login_page():
     """Formulaire de connexion. Le paramètre next est nettoyé avant d'être renvoyé au script."""
     next_url = safe_next_url(request.args.get("next"), "/accueil")
-    return render_template("login/login.html", next_url=next_url)
+    return render_template(
+        "login/login.html",
+        next_url=next_url,
+        site_suspendu=lire_etat()["suspended"],
+    )
 
 
 @auth_bp.route("/logout-page", methods=["GET"])
@@ -156,9 +186,12 @@ def logout_page():
 @auth_bp.route("/logout", methods=["POST"])
 @jwt_required()
 def logout():
-    """Efface les cookies du jeton et du CSRF."""
-    # get_jwt_identity est lu pour s'assurer que le jeton a bien été vérifié.
+    """Efface les cookies du jeton et du CSRF, et ferme la session suivie."""
     get_jwt_identity()
+    try:
+        fermer_presence(get_jwt().get("jti"))
+    except Exception:
+        current_app.logger.exception("Fermeture de session impossible")
     response = jsonify({"message": "Déconnexion réussie"})
     unset_jwt_cookies(response)
     return response, 200

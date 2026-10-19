@@ -18,9 +18,11 @@ os.chdir(_RACINE)
 
 # Réglages posés avant l'import de l'application, qui lit l'environnement au démarrage.
 _BASE = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+_ETAT = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
 os.environ["DATABASE_URI"] = "sqlite:///" + _BASE.name
 os.environ["JWT_SECRET_KEY"] = "cle-de-test-uniquement"
 os.environ["LOGIN_MAX_ATTEMPTS"] = "30"
+os.environ["SITE_STATUS_PATH"] = _ETAT.name
 
 from werkzeug.security import generate_password_hash
 
@@ -47,6 +49,9 @@ def nettoyer():
             chemin.unlink()
     if os.path.exists(_BASE.name):
         os.remove(_BASE.name)
+    for chemin in (Path(_ETAT.name), Path(_ETAT.name).with_suffix(".tmp")):
+        if chemin.is_file():
+            chemin.unlink()
 
 
 def csrf(client):
@@ -228,6 +233,99 @@ def scenario():
     verifier(sortie.status_code == 200, "déconnexion impossible")
     apres = client.get("/auth/me")
     verifier(apres.status_code == 401, "la session est encore valable après la déconnexion")
+
+    with app.app_context():
+        proprietaire = creer_compte("proprietaire", "owner")
+        proprietaire_id = proprietaire.id
+
+    sans_session = client.get("/owner/audit.json")
+    verifier(sans_session.status_code == 401, "l'audit est public")
+
+    entete_admin = connecter(client, "admin", "MotDePasse-Test-9")
+    ban_owner = client.post(f"/admin/dashboard/ban/{proprietaire_id}", headers=entete_admin)
+    verifier(ban_owner.status_code == 403, f"un admin a suspendu le propriétaire : {ban_owner.get_json()}")
+    vol_role = client.post(
+        f"/admin/dashboard/role/{proprietaire_id}",
+        json={"role": "user"},
+        headers=entete_admin,
+    )
+    verifier(vol_role.status_code == 403, f"un admin a modifié le propriétaire : {vol_role.get_json()}")
+    faux_owner = client.post(
+        f"/admin/dashboard/role/{eleve_id}",
+        json={"role": "owner"},
+        headers=entete_admin,
+    )
+    verifier(faux_owner.status_code == 400, "le rôle propriétaire s'attribue depuis l'admin")
+
+    visiteur = app.test_client()
+    connecter(visiteur, "eleve", "MotDePasse-Test-9")
+    admin_pause = app.test_client()
+    connecter(admin_pause, "admin", "MotDePasse-Test-9")
+    entree = client.post(
+        "/auth/login",
+        json={"username": "proprietaire", "password": "MotDePasse-Test-9"},
+    )
+    verifier(entree.status_code == 200, f"connexion propriétaire : {entree.get_json()}")
+    verifier(entree.get_json()["home"] == "/owner/audit", "mauvais accueil propriétaire")
+    entete_owner = csrf(client)
+
+    page = client.get("/owner/audit", headers={"Accept": "text/html"})
+    verifier(page.status_code == 200, "page d'audit indisponible")
+    texte = page.get_data(as_text=True)
+    verifier("Audit du site" in texte and "Suspendre le site" in texte, "le bouton de suspension manque")
+    donnees = client.get("/owner/audit.json")
+    verifier(donnees.status_code == 200, f"json d'audit : {donnees.get_json()}")
+    audit = donnees.get_json()
+    verifier(audit["stockage"]["disque_total_octets"] > 0, "le disque n'est pas mesuré")
+    verifier(audit["contenu"]["matieres"] > 0, "les matières ne sont pas comptées")
+    verifier("sessions" in audit and "comptes" in audit and "securite" in audit, "relevé incomplet")
+    verifier(
+        any(session["username"] == "proprietaire" for session in audit["sessions"]["liste"]),
+        "le propriétaire connecté n'apparaît pas",
+    )
+    refus_eleve = visiteur.get("/owner/audit.json")
+    verifier(refus_eleve.status_code == 403, "un élève lit l'audit")
+    admin_owner = client.get("/admin/dashboard", headers={"Accept": "text/html"})
+    verifier(admin_owner.status_code == 200, "le propriétaire n'ouvre pas l'administration")
+
+    suspension = client.post("/owner/site", json={"suspendu": True}, headers=entete_owner)
+    verifier(
+        suspension.status_code == 200 and suspension.get_json()["site"]["suspendu"] is True,
+        f"suspension du site : {suspension.get_json()}",
+    )
+    page_eleve = visiteur.get("/accueil", headers={"Accept": "text/html"})
+    verifier(page_eleve.status_code == 503, "l'élève consulte le site suspendu")
+    verifier("Site suspendu" in page_eleve.get_data(as_text=True), "page de pause absente")
+    verifier(visiteur.get("/info/matiere").status_code == 503, "l'API reste ouverte pendant la pause")
+    exterieur = app.test_client()
+    bloque = exterieur.post("/auth/login", json={"username": "eleve", "password": "MotDePasse-Test-9"})
+    verifier(bloque.status_code == 503, f"un élève se connecte pendant la pause : {bloque.get_json()}")
+    banniere = exterieur.get("/auth/login-page")
+    verifier("Le site est suspendu." in banniere.get_data(as_text=True), "la page de connexion ne prévient pas")
+    verifier(client.get("/owner/audit.json").status_code == 200, "le propriétaire est bloqué avec le site")
+    verifier(client.get("/admin/dashboard", headers={"Accept": "text/html"}).status_code == 200, "admin coupé pour le propriétaire")
+    verifier(
+        admin_pause.get("/admin/dashboard", headers={"Accept": "text/html"}).status_code == 503,
+        "un administrateur passe pendant la pause",
+    )
+
+    reprise = client.post("/owner/site", json={"suspendu": False}, headers=entete_owner)
+    verifier(
+        reprise.status_code == 200 and reprise.get_json()["site"]["suspendu"] is False,
+        f"réactivation : {reprise.get_json()}",
+    )
+    verifier(visiteur.get("/info/matiere").status_code == 200, "le site ne se rouvre pas")
+
+    sortie_owner = client.post("/auth/logout", headers=entete_owner)
+    verifier(sortie_owner.status_code == 200, "déconnexion propriétaire impossible")
+    verifier(client.get("/owner/audit.json").status_code == 401, "la session propriétaire reste ouverte")
+    entete_owner = connecter(client, "proprietaire", "MotDePasse-Test-9")
+    encore = client.get("/owner/audit.json").get_json()["sessions"]["liste"]
+    verifier(
+        sum(1 for session in encore if session["username"] == "proprietaire") == 1,
+        "une session fermée est encore listée",
+    )
+    client.post("/auth/logout", headers=entete_owner)
 
     _ATTEMPTS.clear()
     os.environ["LOGIN_MAX_ATTEMPTS"] = "2"

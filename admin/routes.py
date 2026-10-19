@@ -24,7 +24,7 @@ def _admin_only():
     user, error = require_user()
     if error:
         return None, error
-    refused = require_roles(user, ("admin",))
+    refused = require_roles(user, ("admin", "owner"))
     if refused:
         return None, refused
     return user, None

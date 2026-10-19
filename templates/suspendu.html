@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titre %}Site suspendu — Fiches de révision{% endblock %}
+{% block contenu %}
+  <section class="panneau etroit">
+    <h1>Site suspendu</h1>
+    <p>Le propriétaire a mis le site en pause. Les fiches, les envois et les téléchargements sont indisponibles.</p>
+    {% if depuis %}
+      <p class="note">Depuis le {{ depuis }}.</p>
+    {% endif %}
+    <p>Si tu es le propriétaire, connecte-toi pour réactiver le site.</p>
+    <p><a class="bouton" href="/auth/login-page">Connexion</a></p>
+  </section>
+{% endblock %}

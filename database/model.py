@@ -18,7 +18,7 @@ def generate_uuid():
 
 
 class User(db.Model):
-    """Un élève, un modérateur ou un administrateur."""
+    """Un élève, un modérateur, un administrateur ou le propriétaire."""
 
     __tablename__ = "users"
 
@@ -28,7 +28,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     # Hash Werkzeug, jamais le mot de passe en clair.
     password = db.Column(db.String(200), nullable=False)
-    # user, moderator ou admin. La valeur est relue à chaque requête.
+    # user, moderator, admin ou owner. La valeur est relue à chaque requête.
     role = db.Column(db.String(20), nullable=False, default="user")
     is_ban = db.Column(db.Boolean, nullable=False, default=False)
     # Listes JSON : SQLAlchemy appelle list() et dict() pour chaque nouvelle ligne.
@@ -41,3 +41,20 @@ class User(db.Model):
 
     def __repr__(self):
         return f"<User {self.username}>"
+
+
+class Presence(db.Model):
+    """Session ouverte : un jeton émis à la connexion, jusqu'à expiration ou déconnexion.
+
+    Sert à l'audit du propriétaire. Le jti est celui du JWT, pas un second secret.
+    """
+
+    __tablename__ = "presences"
+
+    jti = db.Column(db.String(36), primary_key=True)
+    user_id = db.Column(db.String(36), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, nullable=False)
+    last_seen = db.Column(db.DateTime, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)
+    user_agent = db.Column(db.String(240), nullable=False, default="")
+    revoked = db.Column(db.Boolean, nullable=False, default=False)

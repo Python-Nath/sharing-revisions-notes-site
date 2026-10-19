@@ -19,11 +19,11 @@ moderator_bp = Blueprint("moderator", __name__, url_prefix="/moderator")
 
 
 def _staff_only():
-    """Compte connecté, avec le rôle modérateur ou administrateur."""
+    """Compte connecté : modérateur, administrateur ou propriétaire."""
     user, error = require_user()
     if error:
         return None, error
-    refused = require_roles(user, ("admin", "moderator"))
+    refused = require_roles(user, ("admin", "moderator", "owner"))
     if refused:
         return None, refused
     return user, None

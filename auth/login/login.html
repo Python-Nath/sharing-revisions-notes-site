@@ -3,6 +3,9 @@
 {% block contenu %}
   <section class="panneau etroit">
     <h1>Connexion</h1>
+    {% if site_suspendu %}
+      <p class="statut erreur">Le site est suspendu. Seul le propriétaire peut se connecter pour le réactiver.</p>
+    {% endif %}
     <p>Utilise le compte créé par <code>init_users.py</code>.</p>
     <form id="form-login">
       <label class="champ">Identifiant

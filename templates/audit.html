@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }} — Fiches de révision{% endblock %}
+{% block contenu %}
+  <section class="intro" id="zone-pilotage">
+    <h1>Audit du site</h1>
+    <p>Bonjour {{ profil.name }} {{ profil.surname }}. Ce relevé est réservé au propriétaire.</p>
+    <p id="etat-site" class="note"></p>
+    <div class="actions">
+      <button id="bouton-site" class="bouton bouton-danger" type="button">Suspendre le site</button>
+      <button id="bouton-actualiser" class="bouton bouton-secondaire" type="button">Actualiser</button>
+      <a class="bouton bouton-secondaire" href="/admin/dashboard">Modérer les fiches</a>
+      <a class="bouton bouton-secondaire" href="/admin/comptes-page">Gérer les comptes</a>
+    </div>
+  </section>
+  <p id="statut" class="statut" role="status"></p>
+
+  <section class="panneau">
+    <h2>Utilisateurs connectés</h2>
+    <p class="note">Une session reste dans la liste jusqu'à expiration du jeton ou déconnexion. « En ligne » veut dire une activité dans les 15 dernières minutes. La page se rafraîchit toute seule.</p>
+    <div id="zone-sessions"></div>
+  </section>
+
+  <section class="panneau">
+    <h2>Stockage</h2>
+    <div id="zone-stockage" class="grille-stats"></div>
+  </section>
+
+  <section class="panneau">
+    <h2>Comptes</h2>
+    <div id="zone-comptes" class="grille-stats"></div>
+    <p id="zone-anciennete" class="note"></p>
+  </section>
+
+  <section class="panneau">
+    <h2>Activité</h2>
+    <div id="zone-activite" class="grille-stats"></div>
+    <h3>Comptes qui publient le plus</h3>
+    <div id="zone-auteurs"></div>
+    <h3>Comptes qui téléchargent le plus</h3>
+    <div id="zone-lecteurs"></div>
+  </section>
+
+  <section class="panneau">
+    <h2>Contenu</h2>
+    <div id="zone-contenu" class="grille-stats"></div>
+    <h3>Par matière</h3>
+    <div id="zone-matieres"></div>
+    <h3>Par classe</h3>
+    <div id="zone-classes"></div>
+    <h3>Par type de fichier</h3>
+    <div id="zone-extensions"></div>
+    <h3>Plus gros fichiers</h3>
+    <div id="zone-gros"></div>
+    <h3>Fiches les plus récentes</h3>
+    <div id="zone-recentes"></div>
+    <h3>Cours sans fiche</h3>
+    <div id="zone-vides"></div>
+    <h3>Fichiers orphelins</h3>
+    <p class="note">Présents dans uploads/ mais rattachés à aucune fiche valide.</p>
+    <div id="zone-orphelins"></div>
+    <p id="zone-types" class="note"></p>
+  </section>
+
+  <section class="panneau">
+    <h2>Sécurité</h2>
+    <div id="zone-securite" class="grille-stats"></div>
+    <h3>Identifiants bloqués après trop d'échecs</h3>
+    <div id="zone-bloques"></div>
+    <h3>Comptes suspendus</h3>
+    <div id="zone-bannis"></div>
+  </section>
+
+  <script id="audit-data" type="application/json">{{ audit|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='audit.js') }}"></script>
+{% endblock %}

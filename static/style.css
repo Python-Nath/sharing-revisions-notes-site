@@ -170,6 +170,49 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 
 .statut { min-height: 1.4rem; font-weight: 650; }
 
+.grille-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+  gap: 0.75rem;
+  margin: 0.6rem 0 1rem;
+}
+
+.stat {
+  background: #fff;
+  border: 1px solid var(--ligne);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+}
+
+.stat strong {
+  display: block;
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat span, .stat small {
+  display: block;
+  color: var(--encre-douce);
+}
+
+.stat small { font-size: 0.82rem; }
+
+.banniere {
+  border: 1px solid var(--danger);
+  background: #f8ecec;
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+}
+
+.badge {
+  display: inline-block;
+  background: #e5f4ec;
+  color: var(--foret-fonce);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.85rem;
+}
+
 .statut.ok { color: var(--foret-fonce); }
 
 .statut.erreur { color: var(--danger); }

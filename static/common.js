@@ -67,12 +67,14 @@ function afficherStatut(id, message, type) {
 }
 
 function lienEspace(role) {
+  if (role === "owner") return "/owner/audit";
   if (role === "admin") return "/admin/dashboard";
   if (role === "moderator") return "/moderator/dashboard";
   return "/users/dashboard";
 }
 
 function libelleRole(role) {
+  if (role === "owner") return "Propriétaire";
   if (role === "admin") return "Administrateur";
   if (role === "moderator") return "Modérateur";
   return "Élève";
@@ -202,6 +204,19 @@ function monterSelecteur(racine, options) {
   selectClasse.disabled = true;
   selectSpecialite.disabled = true;
 
+  function valeurUnique(select) {
+    /* Un seul vrai choix : on le prend, le placeholder ne compte pas. */
+    let seule = "";
+    let nombre = 0;
+    for (let i = 0; i < select.options.length; i += 1) {
+      const valeur = select.options[i].value;
+      if (!valeur) continue;
+      nombre += 1;
+      seule = valeur;
+    }
+    return nombre === 1 ? seule : "";
+  }
+
   function choixComplet() {
     if (!etat.matiere || !etat.classe || !etat.specialite) return null;
     return { matiere: etat.matiere, classe: etat.classe, specialite: etat.specialite };
@@ -237,6 +252,13 @@ function monterSelecteur(racine, options) {
         if (selectSpecialite.value) etat.specialite = valeurs.specialite;
         valeurs = null;
       }
+      if (!etat.specialite) {
+        const seule = valeurUnique(selectSpecialite);
+        if (seule) {
+          selectSpecialite.value = seule;
+          etat.specialite = seule;
+        }
+      }
       notifier();
     });
   }
@@ -266,6 +288,13 @@ function monterSelecteur(racine, options) {
           etat.classe = valeurs.classe;
           return chargerSpecialites();
         }
+        valeurs = null;
+      }
+      const seuleClasse = valeurUnique(selectClasse);
+      if (seuleClasse) {
+        selectClasse.value = seuleClasse;
+        etat.classe = seuleClasse;
+        return chargerSpecialites();
       }
       notifier();
     });
@@ -304,6 +333,13 @@ function monterSelecteur(racine, options) {
             etat.matiere = valeurs.matiere;
             return chargerClasses();
           }
+          valeurs = null;
+        }
+        const seuleMatiere = valeurUnique(selectMatiere);
+        if (seuleMatiere) {
+          selectMatiere.value = seuleMatiere;
+          etat.matiere = seuleMatiere;
+          return chargerClasses();
         }
       });
     }

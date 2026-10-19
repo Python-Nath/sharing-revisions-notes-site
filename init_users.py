@@ -1,6 +1,6 @@
-"""Crée ou remet à jour les trois comptes de test.
+"""Crée ou remet à jour les comptes de test, dont le propriétaire.
 
-Relance le script autant de fois que tu veux : ces trois identifiants
+Relance le script autant de fois que tu veux : ces identifiants
 retrouvent le mot de passe affiché ci-dessous. Les autres comptes,
 s'il y en a, ne sont pas touchés.
 
@@ -44,6 +44,13 @@ COMPTES = [
         "name": "Administration",
         "surname": "Test",
         "role": "admin",
+    },
+    {
+        "username": "proprietaire",
+        "password": "Proprietaire-2026!",
+        "name": "Propriétaire",
+        "surname": "Site",
+        "role": "owner",
     },
 ]
 

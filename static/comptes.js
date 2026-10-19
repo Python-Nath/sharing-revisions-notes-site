@@ -26,6 +26,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (compte.id === moi) {
       actions.textContent = "C'est toi";
+    } else if (compte.role === "owner") {
+      actions.textContent = "Propriétaire";
     } else if (peutRoles || compte.role === "user") {
       if (peutRoles) {
         const select = document.createElement("select");

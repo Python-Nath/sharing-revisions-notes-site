@@ -14,6 +14,8 @@ from utils.security import is_uuid
 
 def home_for_role(role):
     """Page d'accueil personnelle selon le rôle."""
+    if role == "owner":
+        return "/owner/audit"
     if role == "admin":
         return "/admin/dashboard"
     if role == "moderator":
@@ -49,14 +51,17 @@ def require_roles(user, roles):
 
 
 def can_moderate(actor, target):
-    """Règle de suspension.
+    """Règle de suspension d'un compte.
 
-    Un administrateur peut suspendre un élève ou un modérateur, pas un autre
-    administrateur. Un modérateur ne peut suspendre qu'un élève.
-    Personne ne peut se suspendre soi-même.
+    Le propriétaire peut suspendre tout le monde sauf un autre propriétaire.
+    Un administrateur peut suspendre un élève ou un modérateur.
+    Un modérateur ne peut suspendre qu'un élève.
+    Personne ne peut se suspendre soi-même, ni toucher au propriétaire.
     """
-    if actor.id == target.id:
+    if actor.id == target.id or target.role == "owner":
         return False
+    if actor.role == "owner":
+        return True
     if actor.role == "admin":
         return target.role != "admin"
     if actor.role == "moderator":
@@ -68,7 +73,7 @@ def set_ban(actor, target_id, banned):
     """Suspend ou réactive un compte, si l'acteur en a le droit."""
     if not is_uuid(target_id):
         return jsonify({"error": "Compte introuvable"}), 404
-    if actor.role not in ("admin", "moderator"):
+    if actor.role not in ("admin", "moderator", "owner"):
         return jsonify({"error": "Accès refusé"}), 403
 
     target = db.session.get(User, target_id)
@@ -84,8 +89,11 @@ def set_ban(actor, target_id, banned):
 
 
 def set_role(actor, target_id, new_role):
-    """Change le rôle. Réservé à un administrateur, jamais sur son propre compte."""
-    if actor.role != "admin":
+    """Change le rôle. Réservé à un administrateur ou au propriétaire, jamais sur son propre compte.
+
+    Le rôle propriétaire ne s'attribue pas ici : il vient de init_users.py.
+    """
+    if actor.role not in ("admin", "owner"):
         return jsonify({"error": "Accès refusé"}), 403
     if new_role not in ("user", "moderator", "admin"):
         return jsonify({"error": "Rôle inconnu"}), 400
@@ -95,6 +103,8 @@ def set_role(actor, target_id, new_role):
     target = db.session.get(User, target_id)
     if target is None:
         return jsonify({"error": "Compte introuvable"}), 404
+    if target.role == "owner":
+        return jsonify({"error": "Le propriétaire ne peut pas être modifié"}), 403
     if actor.id == target.id:
         return jsonify({"error": "Tu ne peux pas modifier ton propre rôle"}), 403
 
