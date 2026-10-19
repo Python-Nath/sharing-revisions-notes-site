@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Espace propriétaire - Sharing Revisions &amp; Notes</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="entete">
+    <div class="largeur">
+      <a class="logo" href="/accueil.html">Sharing Revisions &amp; Notes</a>
+      <nav>
+        <a href="/accueil.html">Accueil</a>
+        <a href="/espace" class="actif" aria-current="page">Mon espace</a>
+        <a href="/ajouter.html">Ajouter des fiches</a>
+        <a href="/chercher.html">Chercher des fiches</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="largeur">
+    <div class="entete-espace">
+      <h1>Espace propriétaire</h1>
+      <button type="button" id="deconnexion" class="bouton-clair">Se déconnecter</button>
+    </div>
+    <p id="identite" class="intro"></p>
+    <div id="autres-espaces" class="espaces"></div>
+    <p id="status" role="status"></p>
+
+    <section id="section-stats" class="zone">
+      <h2>Vue d'ensemble</h2>
+      <div class="contenu"></div>
+    </section>
+
+    <section id="section-mdp" class="zone">
+      <h2>Comptes et mots de passe</h2>
+      <div class="contenu"></div>
+    </section>
+
+    <section id="section-toutes-fiches" class="zone">
+      <h2>Toutes les fiches</h2>
+      <div class="contenu"></div>
+    </section>
+
+    <section id="section-mes-fiches" class="zone">
+      <h2>Mes fiches</h2>
+      <div class="contenu"></div>
+    </section>
+  </main>
+
+  <script src="/common.js"></script>
+  <script src="/espace.js"></script>
+</body>
+</html>
