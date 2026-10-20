@@ -188,6 +188,27 @@ def verifier_social(client_owner):
     )
     verifier(prise_cachee.status_code == 404, "un commentaire privé se laisse réserver")
 
+    with app.app_context():
+        creer_compte("eleve3", "user")
+    tiers = app.test_client()
+    entete_tiers = connecter(tiers, "eleve3", "MotDePasse-Test-9")
+    sans_compte = anonyme.post(
+        f"/fiches/{file_id}/commentaires",
+        json={"texte": "sans session", "audience": "auteur"},
+    )
+    verifier(sans_compte.status_code == 401, "un visiteur anonyme a commenté")
+    ajout_tiers = tiers.post(
+        f"/fiches/{file_id}/commentaires",
+        json={"texte": "Retour d un autre eleve", "audience": "auteur"},
+        headers=entete_tiers,
+    )
+    verifier(ajout_tiers.status_code == 201, ajout_tiers.get_json())
+    id_tiers = ajout_tiers.get_json()["commentaire"]["id"]
+    vu_tiers = tiers.get(f"/fiches/{file_id}/commentaires", headers=entete_tiers)
+    verifier(any(item["id"] == id_prive for item in vu_tiers.get_json()["commentaires"]), "un autre élève ne voit pas le commentaire")
+    verifier(any(item["id"] == id_tiers for item in eleve.get(f"/fiches/{file_id}/commentaires", headers=entete_eleve).get_json()["commentaires"]), "l'auteur de la fiche ne voit pas le commentaire d'un autre élève")
+    verifier(all(item["id"] != id_tiers for item in modo.get(f"/fiches/{file_id}/commentaires", headers=entete_modo).get_json()["commentaires"]), "l'équipe voit un commentaire réservé aux utilisateurs")
+
     equipe = eleve2.post(
         f"/fiches/{file_id}/commentaires",
         json={"texte": "Erreur a corriger par l equipe", "audience": "equipe"},
@@ -209,6 +230,9 @@ def verifier_social(client_owner):
     )
     verifier(partage.status_code == 201, partage.get_json())
     id_partage = partage.get_json()["commentaire"]["id"]
+    vu_partage = tiers.get(f"/fiches/{file_id}/commentaires", headers=entete_tiers)
+    verifier(any(item["id"] == id_partage for item in vu_partage.get_json()["commentaires"]), "un élève ne voit pas le commentaire partagé")
+    verifier(all(item["id"] != id_equipe for item in vu_partage.get_json()["commentaires"]), "un élève voit un commentaire d'équipe")
     eleve_prend = eleve2.post(
         f"/fiches/{file_id}/commentaires/{id_partage}/prendre",
         headers=entete_eleve2,

@@ -1,9 +1,11 @@
 """Commentaires sur une fiche.
 
 Trois visibilités :
-- auteur : l'auteur du commentaire et l'auteur de la fiche
+- auteur : tous les comptes élèves, et l'auteur du commentaire
 - equipe : l'auteur du commentaire, les modérateurs, les admins, le propriétaire
-- les_deux : les deux cercles
+- les_deux : les élèves et l'équipe
+
+N'importe quel compte connecté peut commenter n'importe quelle fiche.
 
 La prise en charge est unique. L'auteur de la fiche, un modérateur,
 un administrateur ou le propriétaire peut suivre le commentaire.
@@ -42,12 +44,16 @@ def _auteur_fiche(meta):
 
 
 def peut_voir(user, comment, auteur_fiche):
-    """Vrai si ce compte a le droit de lire ce commentaire."""
-    if user is None:
+    """Vrai si ce compte a le droit de lire ce commentaire.
+
+    « auteur » vise tous les élèves, pas seulement l'auteur de la fiche.
+    L'équipe ne les voit que si le commentaire est aussi adressé à elle.
+    """
+    if user is None or user.is_ban:
         return False
     if user.id == comment.author_id:
         return True
-    if comment.audience in ("auteur", "les_deux") and user.username == auteur_fiche:
+    if comment.audience in ("auteur", "les_deux") and user.role == "user":
         return True
     if comment.audience in ("equipe", "les_deux") and _equipe(user):
         return True

@@ -91,9 +91,9 @@ function lireJson(id) {
 }
 
 function libelleAudience(audience) {
-  if (audience === "auteur") return "Pour l'auteur de la fiche";
+  if (audience === "auteur") return "Pour tous les utilisateurs";
   if (audience === "equipe") return "Pour l'équipe";
-  if (audience === "les_deux") return "Pour l'auteur et l'équipe";
+  if (audience === "les_deux") return "Pour les utilisateurs et l'équipe";
   return "";
 }
 
@@ -188,9 +188,9 @@ function dessinerCommentaires(fiche, panneau) {
     const audience = document.createElement("select");
     audience.setAttribute("aria-label", "Qui peut lire ce commentaire");
     [
-      ["auteur", "Seulement pour l'auteur de la fiche"],
+      ["auteur", "Pour tous les utilisateurs"],
       ["equipe", "Seulement pour l'équipe (modération, admin, propriétaire)"],
-      ["les_deux", "Pour l'auteur et l'équipe"]
+      ["les_deux", "Pour les utilisateurs et l'équipe"]
     ].forEach(function (paire) {
       const option = document.createElement("option");
       option.value = paire[0];
@@ -203,7 +203,7 @@ function dessinerCommentaires(fiche, panneau) {
     envoyer.textContent = "Publier le commentaire";
     const note = document.createElement("p");
     note.className = "note";
-    note.textContent = "L'équipe ne voit pas un commentaire réservé à l'auteur. Une seule personne le suit. Après avoir modifié la fiche, elle peut le retirer.";
+    note.textContent = "N'importe quel compte peut commenter une fiche. L'équipe ne voit pas un commentaire réservé aux utilisateurs. Une seule personne le suit, puis peut le retirer après avoir modifié la fiche.";
     form.append(texte, audience, note, envoyer);
     form.addEventListener("submit", function (event) {
       event.preventDefault();

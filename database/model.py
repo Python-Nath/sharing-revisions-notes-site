@@ -78,7 +78,7 @@ class Star(db.Model):
 class Comment(db.Model):
     """Retour sur une fiche.
 
-    audience : auteur (auteur de la fiche), equipe (modération), les_deux.
+    audience : auteur (tous les élèves), equipe (modération), les_deux.
     status : ouvert, puis pris par une seule personne, puis valide.
     """
 

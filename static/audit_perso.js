@@ -90,9 +90,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function audience(valeur) {
-    if (valeur === "auteur") return "Auteur";
+    if (valeur === "auteur") return "Tous les utilisateurs";
     if (valeur === "equipe") return "Équipe";
-    if (valeur === "les_deux") return "Auteur et équipe";
+    if (valeur === "les_deux") return "Utilisateurs et équipe";
     return valeur || "";
   }
 
