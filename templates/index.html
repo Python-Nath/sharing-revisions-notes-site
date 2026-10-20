@@ -16,7 +16,7 @@
 
   <section class="panneau">
     <h2>Rechercher une fiche</h2>
-    <p class="note">Le texte cherche dans le titre, la description, l'auteur et le nom du fichier. Le cours se choisit dans le menu.</p>
+    <p class="note">Le texte cherche dans le titre, la description, l'auteur et le nom du fichier. La liste suit la saisie. Le cours se choisit dans le menu.</p>
     <form id="form-recherche" class="recherche">
       <label class="champ">Texte
         <input type="search" name="q" maxlength="120" autocomplete="off">
@@ -27,7 +27,6 @@
       <label class="champ">Étoiles minimum
         <input type="number" name="etoiles_min" min="0" max="1000000" inputmode="numeric">
       </label>
-      <button class="bouton" type="submit">Rechercher</button>
     </form>
     <div id="resultats" class="liste"></div>
   </section>

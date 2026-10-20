@@ -65,8 +65,8 @@ ajouter("javascript", "static/common.js", "fonction", "supprimerFiche", "supprim
   "Si le serveur accepte, la page entière se recharge. Ainsi le lien de téléchargement, y compris dans l'historique, disparaît avec le fichier.");
 
 ajouter("javascript", "static/common.js", "fonction", "monterRechercheFiches", "monterRechercheFiches(formulaire, zone, actions)",
-  "Branche le formulaire de recherche de fiches.",
-  "Envoie le texte, l'auteur et le minimum d'étoiles. Les champs vides ne partent pas. Au-delà de 80 fiches, une note demande d'affiner.");
+  "Branche la recherche de fiches, qui se met à jour pendant la saisie.",
+  "Chaque frappe attend un court instant, puis envoie le texte, l'auteur et le minimum d'étoiles. Un zéro ou un champ vide ne part pas. Sans aucun critère, la zone de résultats se vide. Au-delà de 80 fiches, une note demande d'affiner. Une réponse lente ne remplace pas une recherche plus récente.");
 
 ajouter("javascript", "static/common.js", "fonction", "monterSelecteur", "monterSelecteur(racine, options)",
   "Construit les trois listes matière, classe, spécialité.",

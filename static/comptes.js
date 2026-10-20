@@ -104,33 +104,68 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   const formulaire = document.getElementById("form-recherche");
+  let delai = 0;
+  let serie = 0;
+
+  function criteres() {
+    const params = new URLSearchParams();
+    if (!formulaire) return params;
+    new FormData(formulaire).forEach(function (valeur, cle) {
+      const texte = String(valeur || "").trim();
+      if (texte) params.set(cle, texte);
+    });
+    return params;
+  }
+
+  function lancer() {
+    const params = criteres();
+    const ticket = ++serie;
+    if (!params.toString()) {
+      dessiner(comptes);
+      afficherStatut("statut", "", "");
+      return;
+    }
+    api(prefixe + "/comptes/recherche?" + params.toString()).then(function (reponse) {
+      if (ticket !== serie) return;
+      if (reponse.status === 401) {
+        window.location.assign("/auth/login-page?next=" + encodeURIComponent(window.location.pathname));
+        return;
+      }
+      if (!reponse.ok) {
+        afficherStatut("statut", reponse.data.error || "Recherche impossible", "erreur");
+        return;
+      }
+      dessiner(reponse.data.comptes || []);
+      afficherStatut(
+        "statut",
+        reponse.data.tronque ? "Liste limitée aux 100 premiers comptes." : "",
+        reponse.data.tronque ? "ok" : ""
+      );
+    });
+  }
+
+  function bientot() {
+    window.clearTimeout(delai);
+    delai = window.setTimeout(lancer, 250);
+  }
+
   if (formulaire) {
     formulaire.addEventListener("submit", function (event) {
       event.preventDefault();
-      const params = new URLSearchParams();
-      new FormData(formulaire).forEach(function (valeur, cle) {
-        const texte = String(valeur || "").trim();
-        if (texte) params.set(cle, texte);
+      window.clearTimeout(delai);
+      lancer();
+    });
+    formulaire.querySelectorAll("input").forEach(function (champ) {
+      champ.addEventListener("input", bientot);
+      champ.addEventListener("search", function () {
+        window.clearTimeout(delai);
+        lancer();
       });
-      if (!params.toString()) {
-        afficherStatut("statut", "Indique au moins un critère.", "erreur");
-        return;
-      }
-      api(prefixe + "/comptes/recherche?" + params.toString()).then(function (reponse) {
-        if (reponse.status === 401) {
-          window.location.assign("/auth/login-page?next=" + encodeURIComponent(window.location.pathname));
-          return;
-        }
-        if (!reponse.ok) {
-          afficherStatut("statut", reponse.data.error || "Recherche impossible", "erreur");
-          return;
-        }
-        dessiner(reponse.data.comptes || []);
-        afficherStatut(
-          "statut",
-          reponse.data.tronque ? "Liste limitée aux 100 premiers comptes." : "",
-          reponse.data.tronque ? "ok" : ""
-        );
+    });
+    formulaire.querySelectorAll("select").forEach(function (champ) {
+      champ.addEventListener("change", function () {
+        window.clearTimeout(delai);
+        lancer();
       });
     });
   }

@@ -412,49 +412,84 @@ function supprimerFiche(url) {
   });
 }
 
-/* Recherche de fiches. Chaque champ vide est ignoré, le serveur exige au moins un critère. */
+/* Recherche de fiches. Le tri suit la frappe et les listes, sans bouton. */
 function monterRechercheFiches(formulaire, zone, actionsPour) {
   if (!formulaire || !zone) return;
-  formulaire.addEventListener("submit", function (event) {
-    event.preventDefault();
+  let delai = 0;
+  let serie = 0;
+
+  function criteres() {
     const params = new URLSearchParams();
     new FormData(formulaire).forEach(function (valeur, cle) {
       const texte = String(valeur || "").trim();
-      if (texte) params.set(cle, texte);
+      if (!texte || texte === "0") return;
+      params.set(cle, texte);
     });
+    return params;
+  }
+
+  function peindre(reponse) {
     zone.replaceChildren();
-    if (!params.toString()) {
-      afficherStatut("statut", "Indique au moins un critère.", "erreur");
+    if (!reponse.ok) {
+      afficherStatut("statut", reponse.data.error || "Recherche impossible", "erreur");
       return;
     }
-    const attente = document.createElement("p");
-    attente.className = "vide";
-    attente.textContent = "Recherche…";
-    zone.append(attente);
-    api("/info/recherche?" + params.toString()).then(function (reponse) {
+    afficherStatut("statut", "", "");
+    const liste = reponse.data.fiches || [];
+    if (!liste.length) {
+      const vide = document.createElement("p");
+      vide.className = "vide";
+      vide.textContent = "Aucune fiche ne correspond.";
+      zone.append(vide);
+      return;
+    }
+    liste.forEach(function (fiche) {
+      if (!fiche || !fiche.id) return;
+      zone.append(carteFiche(fiche, actionsPour ? actionsPour(fiche) : []));
+    });
+    if (reponse.data.tronque) {
+      const suite = document.createElement("p");
+      suite.className = "note";
+      suite.textContent = "Seules les 80 premières fiches sont affichées. Affine la recherche.";
+      zone.append(suite);
+    }
+  }
+
+  function lancer() {
+    const params = criteres();
+    const ticket = ++serie;
+    if (!params.toString()) {
       zone.replaceChildren();
-      if (!reponse.ok) {
-        afficherStatut("statut", reponse.data.error || "Recherche impossible", "erreur");
-        return;
-      }
-      const liste = reponse.data.fiches || [];
-      if (!liste.length) {
-        const vide = document.createElement("p");
-        vide.className = "vide";
-        vide.textContent = "Aucune fiche ne correspond.";
-        zone.append(vide);
-        return;
-      }
-      liste.forEach(function (fiche) {
-        if (!fiche || !fiche.id) return;
-        zone.append(carteFiche(fiche, actionsPour ? actionsPour(fiche) : []));
-      });
-      if (reponse.data.tronque) {
-        const suite = document.createElement("p");
-        suite.className = "note";
-        suite.textContent = "Seules les 80 premières fiches sont affichées. Affine la recherche.";
-        zone.append(suite);
-      }
+      afficherStatut("statut", "", "");
+      return;
+    }
+    api("/info/recherche?" + params.toString()).then(function (reponse) {
+      if (ticket !== serie) return;
+      peindre(reponse);
+    });
+  }
+
+  function bientot() {
+    window.clearTimeout(delai);
+    delai = window.setTimeout(lancer, 250);
+  }
+
+  formulaire.addEventListener("submit", function (event) {
+    event.preventDefault();
+    window.clearTimeout(delai);
+    lancer();
+  });
+  formulaire.querySelectorAll("input").forEach(function (champ) {
+    champ.addEventListener("input", bientot);
+    champ.addEventListener("search", function () {
+      window.clearTimeout(delai);
+      lancer();
+    });
+  });
+  formulaire.querySelectorAll("select").forEach(function (champ) {
+    champ.addEventListener("change", function () {
+      window.clearTimeout(delai);
+      lancer();
     });
   });
 }

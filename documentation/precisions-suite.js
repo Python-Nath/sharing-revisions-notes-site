@@ -367,13 +367,13 @@ preciser("templates/index.html", "Accueil", [
   ["form-recherche.q", "Texte libre, 120 caractères, type search."],
   ["form-recherche.auteur", "Nom d'auteur, 80 caractères."],
   ["form-recherche.etoiles_min", "Nombre entier, de 0 à 1 000 000."],
-  ["#resultats", "Cartes de la recherche. Vide tant qu'on n'a pas envoyé le formulaire."],
+  ["#resultats", "Cartes de la recherche. Se remplit pendant la saisie, se vide si tous les champs sont vides."],
   ["#fichiers", "Cartes du cours choisi."],
   ["#invite-connexion", "Lien vers /auth/login-page?next=/accueil. Caché dès qu'un compte est connu."],
   ["#form-envoi", "Fichier, titre (120), description (2000). Caché sans compte. Pas de champ auteur."]
 ], [
   "accueil.js démarre le sélecteur et charge les fiches du cours.",
-  "Soumettre la recherche interroge /info/recherche et peint #resultats.",
+  "Taper ou changer un critère interroge /info/recherche et peint #resultats, sans bouton.",
   "Changer de cours repeint #fichiers.",
   "Sans compte, le formulaire de publication reste caché et l'invite de connexion apparaît.",
   "Publier envoie le fichier vers /upload/matière/classe/spécialité."
@@ -434,7 +434,7 @@ preciser("templates/staff_dashboard.html", "Espace modération ou administration
 ], [
   "staff.js lit data-prefix.",
   "Il charge les fiches du cours et pose les liens de modification sous ce préfixe.",
-  "La recherche remplit #resultats sans changer le cours affiché en dessous."
+  "La recherche suit la saisie et remplit #resultats sans changer le cours affiché en dessous."
 ]);
 
 preciser("templates/comptes.html", "Gestion des comptes", [
@@ -449,7 +449,7 @@ preciser("templates/comptes.html", "Gestion des comptes", [
 ], [
   "comptes.js lit la configuration et le JSON.",
   "Il dessine une ligne par compte : nom, identifiant, rôle, état, actions.",
-  "La recherche remplace le tableau. Tout afficher revient à la liste d'origine."
+  "Taper un nom ou choisir un rôle ou un état remplace le tableau. Vider les critères, ou Tout afficher, revient à la liste d'origine."
 ]);
 
 preciser("templates/modifier.html", "Modifier une fiche", [
@@ -573,6 +573,22 @@ preciser("documentation/index.html", "Page de cette documentation", [
   "Ouvrir le fichier dans le navigateur. Aucun serveur n'est contacté.",
   "menu.js construit les pastilles et le sommaire à partir de window.DOCS.",
   "Un clic de fiche pose le texte à gauche et le code coloré à droite, chacun sur la moitié."
+]);
+
+preciser("static/common.js", "monterRechercheFiches", [
+  ["formulaire", "Formulaire de recherche de fiches : texte, auteur, étoiles minimum."],
+  ["zone", "Élément #resultats, vidé puis rempli avec les cartes."],
+  ["actionsPour", "Fonction facultative qui donne Modifier et Supprimer à une carte. Absente sur l'accueil."],
+  ["delai", "Minuteur de 250 ms. Il repart à chaque frappe, pour ne pas interroger le serveur à chaque lettre."],
+  ["serie", "Numéro de la recherche en cours. Une réponse plus ancienne est ignorée."],
+  ["params", "Critères non vides. Le zéro du minimum d'étoiles est ignoré, comme sur le serveur."]
+], [
+  "Une frappe dans un champ texte programme la recherche 250 ms plus tard.",
+  "Effacer le champ avec la croix du navigateur lance la recherche tout de suite.",
+  "Un changement de liste déroulante lance la recherche tout de suite.",
+  "Sans aucun critère, #resultats est vidé et aucun message d'erreur n'est affiché.",
+  "La réponse peint les cartes, ou « Aucune fiche ne correspond. ».",
+  "Si la liste dépasse 80 fiches, une note demande d'affiner."
 ]);
 
 preciser("static/style.css", "petit écran", [
