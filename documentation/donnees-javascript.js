@@ -53,12 +53,12 @@ ajouter("javascript", "static/common.js", "fonction", "dessinerCommentaires", "d
   "Le formulaire propose trois publics : tous les utilisateurs, seulement l'équipe, ou les deux. Les boutons Suivre, Valider et Retirer n'apparaissent que si le serveur a dit que ce compte en a le droit.");
 
 ajouter("javascript", "static/common.js", "fonction", "zoneCommentaires", "zoneCommentaires(fiche)",
-  "Bloc replié « Commentaires ».",
-  "La liste est demandée au serveur seulement quand on ouvre le bloc, puis à chaque réouverture pour voir les nouveautés.");
+  "Bouton Commentaires et son panneau, rendus séparément.",
+  "Le bouton entre dans le menu Actions de la carte. Le panneau reste sous la carte, caché. La liste est demandée seulement à l'ouverture, puis à chaque réouverture.");
 
 ajouter("javascript", "static/common.js", "fonction", "carteFiche", "carteFiche(fiche, actions)",
   "Construit la carte d'une fiche.",
-  "Titre, auteur, cours, description, nom du fichier, étoile, boutons d'action, commentaires. Tout le texte visible est posé avec textContent.");
+  "Titre, auteur, cours, description, nom du fichier. L'étoile reste visible. Le menu Actions contient Télécharger, puis Modifier ou Supprimer s'ils sont fournis, puis Commentaires. Tout le texte visible est posé avec textContent.");
 
 ajouter("javascript", "static/common.js", "fonction", "supprimerFiche", "supprimerFiche(adresse)",
   "Demande confirmation puis supprime la fiche.",
@@ -109,8 +109,12 @@ ajouter("javascript", "static/common.js", "fonction", "demarrer", "demarrer()  �
   "Reprend le cours mémorisé s'il existe encore.");
 
 ajouter("javascript", "static/common.js", "fonction", "remplirNavigation", "remplirNavigation()",
-  "Construit le menu du haut selon la session.",
-  "Sans compte : lien Connexion. Si le mot de passe doit encore être choisi, la page part vers /auth/mot-de-passe et le menu ne propose que la déconnexion. Sinon : Mon espace, Mot de passe et Déconnexion. Annonce ensuite l'événement compte-connu.");
+  "Construit le menu du compte en haut de page.",
+  "Sans compte : lien Connexion. Si le mot de passe doit encore être choisi et que la page n'est pas celle du mot de passe, le navigateur y part. Sinon un menu au nom de la personne contient Mon espace, Mot de passe et Déconnexion. Annonce ensuite l'événement compte-connu.");
+
+ajouter("javascript", "static/common.js", "fonction", "preparerCookies", "preparerCookies()",
+  "Montre le bandeau des cookies tant qu'il n'a pas été accepté.",
+  "Lit la clé fiches-cookies dans le stockage local. Si elle vaut compris, le bandeau reste caché. Le bouton J'ai compris écrit cette valeur et cache le bandeau. Ce n'est pas un cookie envoyé au serveur.");
 
 ajouter("javascript", "static/accueil.js", "fonction", "afficherZones", "afficherZones()",
   "Montre le formulaire d'envoi ou l'invite à se connecter.",
@@ -134,7 +138,19 @@ ajouter("javascript", "static/staff.js", "fonction", "charger", "charger()",
 
 ajouter("javascript", "static/comptes.js", "fonction", "dessiner", "dessiner(liste)",
   "Remplace le tableau des comptes.",
-  "Utilisé au chargement, après une recherche, et pour le bouton Tout afficher.");
+  "Utilisé au chargement, pendant la saisie, au changement de rôle ou d'état, et pour le bouton Tout afficher.");
+
+ajouter("javascript", "static/comptes.js", "fonction", "criteres", "criteres()  — dans le chargement",
+  "Lit le nom, le rôle et l'état du formulaire.",
+  "Les champs vides ne partent pas. Sans aucun critère, la recherche n'appelle pas le serveur.");
+
+ajouter("javascript", "static/comptes.js", "fonction", "lancer", "lancer()  — dans le chargement",
+  "Filtre les comptes tout de suite.",
+  "Si tout est vide, le tableau reprend la liste déjà dans la page. Sinon il interroge prefixe/comptes/recherche. Une réponse plus ancienne est ignorée.");
+
+ajouter("javascript", "static/comptes.js", "fonction", "bientot", "bientot()  — dans le chargement",
+  "Retarde la recherche de 250 ms pendant la frappe.",
+  "Le délai repart à chaque lettre. Choisir un rôle ou un état ne passe pas par ce délai : lancer est appelé tout de suite.");
 
 ajouter("javascript", "static/comptes.js", "fonction", "cellule", "cellule(texte)",
   "Crée une case de tableau.",
@@ -190,7 +206,15 @@ ajouter("javascript", "static/audit.js", "fonction", "cours", "cours(fiche)",
 
 ajouter("javascript", "static/audit.js", "fonction", "peindre", "peindre()",
   "Dessine tout l'audit du propriétaire.",
-  "Sessions, stockage, comptes, activité, étoiles, contenu, sécurité. La fiche la plus étoilée du site et les têtes par matière sont dans la section Étoiles.");
+  "Les chiffres détaillés restent dans les onglets Sessions, Contenu, Étoiles et Sécurité. À la fin, dessinerGraphiques remplit la vue d'ensemble.");
+
+ajouter("javascript", "static/audit.js", "fonction", "etoilesDe", "etoilesDe(relevé)  — dans le chargement",
+  "Retourne le bloc étoiles du relevé, ou un objet vide.",
+  "Évite de dessiner un graphique quand le relevé n'a pas encore cette partie.");
+
+ajouter("javascript", "static/audit.js", "fonction", "dessinerGraphiques", "dessinerGraphiques(...)  — dans le chargement",
+  "Anneau des rôles et barres de la vue d'ensemble.",
+  "Comptes par rôle, disque utilisé et libre, huit matières les plus fournies, six têtes d'étoiles. Si le site est suspendu, une note est placée au-dessus.");
 
 ajouter("javascript", "static/audit.js", "fonction", "appliquer", "appliquer(données, message)",
   "Remplace le relevé affiché.",
@@ -238,7 +262,19 @@ ajouter("javascript", "static/audit_perso.js", "fonction", "statut", "statut(val
 
 ajouter("javascript", "static/audit_perso.js", "fonction", "peindre", "peindre()",
   "Dessine l'audit de mes fiches.",
-  "Le bouton Actualiser redemande /users/audit.json. Cette adresse ne contient pas l'identifiant d'un autre compte.");
+  "Jusqu'à huit barres d'étoiles dans graphique-perso, puis les tableaux. La grille de chiffres zone-resume est remplie mais reste cachée. Actualiser, dans le menu Actions, redemande /users/audit.json. Cette adresse ne contient pas l'identifiant d'un autre compte.");
+
+ajouter("javascript", "static/graphiques.js", "fonction", "barreAnimee", "barreAnimee(étiquette, valeur, maximum, détail)",
+  "Une barre qui se remplit.",
+  "La largeur est la part de la valeur dans le maximum, au moins 6 % si la valeur est positive, écrite dans la variable CSS --largeur. Le texte est étiquette et détail, posé avec textContent.");
+
+ajouter("javascript", "static/graphiques.js", "fonction", "anneau", "anneau(parts)",
+  "Anneau des parts, avec sa légende.",
+  "Chaque part a un libellé, une valeur et une couleur. Un cercle SVG reçoit --part. Les parts nulles sont sautées. La légende reprend le libellé et la valeur. Aucune bibliothèque externe : le script vient du site, comme l'exige la politique de sécurité.");
+
+ajouter("javascript", "static/cookies.js", "script", "Revoir le bandeau", "static/cookies.js",
+  "Efface l'accusé du bandeau cookies.",
+  "Pas de fonction nommée. Le bouton cookies-oublier retire fiches-cookies du stockage local. Les cookies de session et de sécurité ne sont pas touchés. Le bandeau reviendra au prochain affichage d'une page.");
 
 ajouter("javascript", "static/modifier.js", "script", "Formulaire de modification", "static/modifier.js",
   "Envoie le formulaire de correction d'une fiche.",

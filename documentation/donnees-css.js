@@ -113,8 +113,36 @@ ajouter("css", "static/style.css", "règle", ".table-scroll et .comptes", "table
   "Bordures horizontales couleur ligne. Le texte des cellules reste en haut. La liste des rôles a une largeur minimale pour ne pas s'écraser.");
 
 ajouter("css", "static/style.css", "règle", ".pied", ".pied",
-  "Ligne du bas : partage de fiches entre élèves.",
-  "Centrée, couleur douce.");
+  "Pied de page, avec de la place pour le bandeau cookies.",
+  "Texte centré. Le padding du bas laisse le bandeau recouvrir sans cacher la dernière ligne.");
+
+ajouter("css", "static/style.css", "règle", ".menu-legal", ".menu-legal",
+  "Liens mentions, confidentialité, cookies et licences.",
+  "Rangée centrée, qui passe à la ligne si l'écran est étroit.");
+
+ajouter("css", "static/style.css", "règle", ".menu-liste", ".menu-liste",
+  "Menu déroulant cliquable.",
+  "Le résumé est une pilule. Le panneau s'ouvre en dessous, au-dessus du reste de la page. Les liens et boutons du panneau n'ont pas l'air d'une rangée de boutons : ils sont empilés, fond transparent, surlignés au survol.");
+
+ajouter("css", "static/style.css", "règle", ".barre-fiche", ".barre-fiche",
+  "Étoile et menu Actions sur une carte.",
+  "Les deux restent côte à côte et passent à la ligne si besoin.");
+
+ajouter("css", "static/style.css", "règle", ".onglets", ".onglets",
+  "Onglets de l'audit du propriétaire.",
+  "Le bouton choisi a un trait forêt en dessous. Les autres restent en encre douce.");
+
+ajouter("css", "static/style.css", "règle", ".piste", ".piste",
+  "Barre de graphique.",
+  "Le fond est un rail. Le remplissage part de largeur nulle et va jusqu'à --largeur en 0,8 s.");
+
+ajouter("css", "static/style.css", "règle", ".anneau", ".anneau",
+  "Anneau des rôles.",
+  "Neuf rem de côté. Chaque segment part de zéro et trace sa part --part. La légende aligne une pastille colorée et le libellé.");
+
+ajouter("css", "static/style.css", "règle", ".banniere-cookies", ".banniere-cookies",
+  "Bandeau fixé en bas de l'écran.",
+  "Carte, bord et ombre du thème. Le texte prend la place restante, le lien et le bouton restent à côté, ou en dessous si l'écran est étroit.");
 
 ajouter("css", "static/style.css", "règle", "[hidden]", "[hidden]",
   "Un élément hidden ne s'affiche pas, même si une autre règle voudrait le montrer.",

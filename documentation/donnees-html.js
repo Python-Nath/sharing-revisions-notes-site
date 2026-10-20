@@ -6,7 +6,7 @@ ajouter("html", "templates/base.html", "page", "Squelette commun", "templates/ba
 
 ajouter("html", "templates/index.html", "page", "Accueil", "templates/index.html",
   "Choisir un cours, chercher une fiche, lire les cartes, publier.",
-  "Le sélecteur de cours est au-dessus. La recherche n'a plus matière, classe ni spécialité : ces trois choix sont dans le menu. Restent le texte, l'auteur et le minimum d'étoiles. Le formulaire d'envoi est caché tant qu'on n'est pas connecté. L'auteur n'est pas demandé : le serveur prend le compte.");
+  "Le sélecteur de cours est au-dessus. La recherche n'a plus matière, classe ni spécialité : ces trois choix sont dans le menu. Restent le texte, l'auteur et le minimum d'étoiles. La liste suit la saisie, sans bouton Rechercher. Le formulaire d'envoi est caché tant qu'on n'est pas connecté. L'auteur n'est pas demandé : le serveur prend le compte.");
 
 ajouter("html", "templates/user_dashboard.html", "page", "Espace élève", "templates/user_dashboard.html",
   "Les envois et les téléchargements de la personne, derrière un menu.",
@@ -22,11 +22,11 @@ ajouter("html", "templates/audit.html", "page", "Audit du propriétaire", "templ
 
 ajouter("html", "templates/staff_dashboard.html", "page", "Espace modération ou administration", "templates/staff_dashboard.html",
   "Même page pour les deux rôles. Le préfixe change.",
-  "Le menu contient Gérer les comptes et Voir l'accueil. La recherche de fiches garde le texte, l'auteur et les étoiles. Le cours se choisit dans le menu. La balise staff-config porte data-prefix, /admin ou /moderator, lu par staff.js pour les liens Modifier et Supprimer.");
+  "Le menu contient Gérer les comptes et Voir l'accueil. La recherche de fiches garde le texte, l'auteur et les étoiles, et suit la saisie. Le cours se choisit dans le menu. La balise staff-config porte data-prefix, /admin ou /moderator, lu par staff.js pour les liens Modifier et Supprimer.");
 
 ajouter("html", "templates/comptes.html", "page", "Gestion des comptes", "templates/comptes.html",
   "Tableau des comptes, avec recherche.",
-  "Critères : nom ou identifiant, rôle, état. Le mot de passe n'apparaît nulle part. comptes-config dit si le rôle peut être changé et qui est la personne connectée. Les lignes sont dessinées par comptes.js.");
+  "Critères : nom ou identifiant, rôle, état. Le tableau suit la saisie et les listes, sans bouton Rechercher. Le mot de passe n'apparaît nulle part. comptes-config dit si le rôle peut être changé et qui est la personne connectée. Les lignes sont dessinées par comptes.js.");
 
 ajouter("html", "templates/modifier.html", "page", "Modifier une fiche", "templates/modifier.html",
   "Formulaire de correction.",

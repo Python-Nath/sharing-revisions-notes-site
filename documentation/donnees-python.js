@@ -6,7 +6,7 @@ ajouter("python", "app.py", "fonction", "_load_secret", "_load_secret()",
 
 ajouter("python", "app.py", "fonction", "create_app", "create_app()",
   "Construit l'application, la base et les protections.",
-  "Elle règle la taille maximale d'un envoi à 100 Mo, les cookies de session, le CSRF, et la base SQLite. Elle crée les tables, ajoute les colonnes manquantes (mot de passe à changer, commentaire corrigé), puis garantit un seul propriétaire. Le serveur lancé par python app.py n'active pas le débogueur Flask.");
+  "Elle règle la taille maximale d'un envoi à 100 Mo, les cookies de session, le CSRF, et la base SQLite. Elle crée les tables, ajoute les colonnes manquantes (mot de passe à changer, commentaire corrigé), puis garantit un seul propriétaire. Elle enregistre aussi le blueprint /legal. Le serveur lancé par python app.py n'active pas le débogueur Flask.");
 
 ajouter("python", "app.py", "fonction", "token_revoked", "token_revoked(en-tête, payload)",
   "Invalide un jeton déjà émis.",
@@ -462,7 +462,7 @@ ajouter("python", "utils/site_gate.py", "fonction", "_est_proprietaire", "_est_p
 
 ajouter("python", "utils/site_gate.py", "fonction", "bloquer_si_suspendu", "bloquer_si_suspendu()",
   "Réponse 503 si le site est en pause.",
-  "La connexion, la déconnexion et les fichiers statiques restent ouverts. Le propriétaire passe. Les autres reçoivent la page « Site suspendu » ou un JSON.");
+  "La connexion, la déconnexion, les fichiers statiques et les pages /legal/ restent ouverts. Le propriétaire passe. Les autres reçoivent la page « Site suspendu » ou un JSON.");
 
 ajouter("python", "utils/audit.py", "fonction", "_taille_dossier", "_taille_dossier(racine)",
   "Additionne la taille des vrais fichiers d'un dossier.",
@@ -786,11 +786,11 @@ ajouter("python", "app.py", "fonction", "_colonne_mot_de_passe", "_colonne_mot_d
 
 ajouter("python", "app.py", "fonction", "mot_de_passe_a_choisir", "mot_de_passe_a_choisir()",
   "Avant chaque requête, ferme le site tant que le mot de passe n'est pas choisi.",
-  "Fonction interne de create_app. Elle appelle forcer_mot_de_passe. La page de choix, la déconnexion et la connexion restent ouvertes.");
+  "Fonction interne de create_app. Elle appelle forcer_mot_de_passe. La page de choix, la déconnexion, la connexion et les pages /legal/ restent ouvertes.");
 
 ajouter("python", "utils/access.py", "fonction", "forcer_mot_de_passe", "forcer_mot_de_passe()",
   "Bloque tout sauf le choix du mot de passe.",
-  "Si le compte connecté a encore must_change_password, une page HTML est renvoyée vers /auth/mot-de-passe. Un appel de script reçoit 403. Sans session, ou une fois le mot de passe choisi, la requête continue.");
+  "Si le compte connecté a encore must_change_password, une page HTML est renvoyée vers /auth/mot-de-passe. Un appel de script reçoit 403. Sans session, ou une fois le mot de passe choisi, la requête continue. Les pages /legal/ restent lisibles pendant ce blocage.");
 
 ajouter("python", "auth/routes.py", "fonction", "_refus_mot_de_passe", "_refus_mot_de_passe(compte, actuel, nouveau, confirmation)",
   "Contrôle le nouveau mot de passe.",
@@ -803,6 +803,22 @@ ajouter("python", "auth/routes.py", "fonction", "mot_de_passe_page", "mot_de_pas
 ajouter("python", "auth/routes.py", "fonction", "changer_mot_de_passe", "changer_mot_de_passe()",
   "Enregistre le nouveau mot de passe.",
   "POST /auth/mot-de-passe avec actuel, nouveau et confirmation en JSON, plus le jeton CSRF. Le hash remplace l'ancien. must_change_password repasse à faux. La réponse indique la page d'accueil du rôle.");
+
+ajouter("python", "legal/routes.py", "fonction", "mentions", "mentions()",
+  "Page des mentions légales.",
+  "GET /legal/mentions. Publique. Elle ne lit ni la base ni les fiches. Elle reste ouverte si le site est suspendu ou si un mot de passe doit être choisi.");
+
+ajouter("python", "legal/routes.py", "fonction", "confidentialite", "confidentialite()",
+  "Page de la politique de confidentialité.",
+  "GET /legal/confidentialite. Décrit les données réellement gardées : compte, fiches, activité, session. Pas d'appel à la base.");
+
+ajouter("python", "legal/routes.py", "fonction", "cookies", "cookies()",
+  "Page de gestion des cookies.",
+  "GET /legal/cookies. Décrit le cookie de session et le cookie CSRF. Le bouton pour revoir le bandeau est dans le modèle, traité par cookies.js.");
+
+ajouter("python", "legal/routes.py", "fonction", "licences", "licences()",
+  "Page des licences des bibliothèques.",
+  "GET /legal/licences. Nomme Flask, Werkzeug, SQLAlchemy, Flask-JWT-Extended, Gunicorn et Requests. Les fiches des élèves ne sont pas couvertes par ces licences.");
 
 ajouter("python", "tests/test_flows.py", "fonction", "verifier_mot_de_passe", "verifier_mot_de_passe()",
   "Vérifie le blocage de la première connexion et le changement libre.",

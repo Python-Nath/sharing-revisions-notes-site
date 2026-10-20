@@ -20,7 +20,10 @@ preciser("Présentation", "Le site en une minute", [
 ], [
   "L'élève choisit un cours, publie ou télécharge.",
   "Le serveur vérifie le chemin, le type de fichier et le compte.",
-  "Le navigateur n'écrit jamais le HTML des fiches à la main : il crée des éléments et y pose du texte."
+  "Le navigateur n'écrit jamais le HTML des fiches à la main : il crée des éléments et y pose du texte.",
+  "La recherche de fiches et de comptes filtre pendant la saisie.",
+  "L'audit du propriétaire ouvre des graphiques. Les détails sont dans des onglets.",
+  "Le pied de page ouvre les mentions, la confidentialité, les cookies et les licences."
 ]);
 
 preciser("Présentation", "Les quatre rôles", [
@@ -278,8 +281,8 @@ preciser("static/style.css", ".table-scroll et .comptes", [
 
 preciser("static/style.css", ".pied", [
   ["text-align", "center."],
-  ["padding", "1rem."]
-], ["Dernière ligne de base.html."]);
+  ["padding", "1.2rem 1rem 5rem, pour laisser passer le bandeau cookies."]
+], ["Contient la phrase de partage et le menu des quatre pages légales."]);
 
 preciser("static/style.css", "[hidden]", [
   ["display", "none !important."]
@@ -572,8 +575,174 @@ preciser("documentation/index.html", "Page de cette documentation", [
 ], [
   "Ouvrir le fichier dans le navigateur. Aucun serveur n'est contacté.",
   "menu.js construit les pastilles et le sommaire à partir de window.DOCS.",
-  "Un clic de fiche pose le texte à gauche et le code coloré à droite, chacun sur la moitié."
+  "Un clic de fiche pose le texte à gauche et le code coloré à droite, chacun sur la moitié.",
+  "Le code s'affiche en entier : pas de hauteur maximale, pas de barre de défilement dans le bloc."
 ]);
+
+preciser("static/common.js", "carteFiche", [
+  ["barre", "Ligne avec l'étoile et le menu Actions."],
+  ["menu", "Élément details.menu-liste. Le résumé dit Actions."],
+  ["lien", "Télécharger, vers /download/matière/classe/spécialité/identifiant."],
+  ["actions", "Modifier, Supprimer, ou rien, selon la page qui appelle la carte."],
+  ["commentaires", "Objet { bloc, ouvrir } de zoneCommentaires. Le bouton va dans le menu, le panneau sous la carte."]
+], [
+  "Pose le titre, l'auteur, le cours, la description et le nom du fichier avec textContent.",
+  "Ajoute l'étoile si la fiche a un identifiant.",
+  "Ouvre le menu Actions : Télécharger, puis les actions fournies, puis Commentaires."
+]);
+
+preciser("static/common.js", "remplirNavigation", [
+  ["zone", "Élément #nav-compte."],
+  ["compte", "Réponse de /auth/me, ou null si personne n'est connecté."],
+  ["menuCompte", "Menu details dont le résumé est le prénom."],
+  ["espace", "Lien vers la page d'accueil du rôle."],
+  ["motDePasse", "Lien vers /auth/mot-de-passe."],
+  ["sortie", "Lien vers /auth/logout-page."]
+], [
+  "Sans compte, pose seulement le lien Connexion.",
+  "Si le mot de passe doit changer et que la page n'est pas /auth/mot-de-passe, y envoie le navigateur.",
+  "Sinon pose le menu : Mon espace, Mot de passe, Déconnexion.",
+  "Écrit Bonjour dans #salut s'il existe, puis émet compte-connu."
+]);
+
+preciser("static/common.js", "preparerCookies", [
+  ["bandeau", "Élément #banniere-cookies, caché dans le HTML."],
+  ["bouton", "Élément #cookies-ok."],
+  ["fiches-cookies", "Clé du stockage local. Valeur compris après le clic."]
+], [
+  "Si la clé vaut déjà compris, ne montre rien.",
+  "Sinon retire hidden du bandeau.",
+  "J'ai compris écrit compris et cache le bandeau."
+]);
+
+preciser("static/comptes.js", "criteres", [
+  ["params", "URLSearchParams. Un champ vide n'y est pas ajouté."]
+], [
+  "Lit le formulaire de recherche des comptes.",
+  "Renvoie les critères non vides."
+]);
+
+preciser("static/comptes.js", "lancer", [
+  ["serie", "Numéro de la recherche. Une réponse plus ancienne est ignorée."],
+  ["prefixe", "/admin ou /moderator, lu dans comptes-config."]
+], [
+  "Sans critère, redessine la liste complète déjà dans la page.",
+  "Sinon interroge prefixe/comptes/recherche.",
+  "Un 401 renvoie à la connexion.",
+  "Au-delà de 100 comptes, un message le signale."
+]);
+
+preciser("static/comptes.js", "bientot", [
+  ["delai", "Minuteur de 250 ms, remis à zéro à chaque frappe."]
+], [
+  "Chaque lettre du nom reporte la recherche.",
+  "Le changement d'une liste n'utilise pas ce délai."
+]);
+
+preciser("static/audit.js", "dessinerGraphiques", [
+  ["rolesParts", "Élèves, modérateurs, administrateurs, propriétaire, chacun avec une couleur."],
+  ["blocStock", "Barres utilisé et libre, sur le total du disque."],
+  ["matieres", "Huit premières matières, barres rapportées à la plus fournie."],
+  ["etoiles", "Phrase de la fiche la plus étoilée, puis six barres de têtes de matière."]
+], [
+  "Vide #graphiques.",
+  "Pose l'anneau des rôles, les barres de disque, de matières et d'étoiles.",
+  "Si le site est suspendu, ajoute la note en premier."
+]);
+
+preciser("static/audit.js", "etoilesDe", [
+  ["releve.etoiles", "Bloc du classement, ou un objet vide s'il manque."]
+], [
+  "Retourne releve.etoiles, ou {}."
+]);
+
+preciser("static/graphiques.js", "barreAnimee", [
+  ["etiquette", "Nom affiché avant le point médian."],
+  ["valeur", "Mesure de cette barre."],
+  ["maximum", "Référence pour calculer le pourcentage."],
+  ["detail", "Texte après le point médian."],
+  ["--largeur", "Pourcentage écrit sur le remplissage. Au moins 6 si la valeur est positive."]
+], [
+  "Calcule la part, avec un plancher de 6 % pour une valeur positive.",
+  "Pose --largeur. L'animation CSS va de 0 à cette largeur.",
+  "Renvoie la ligne, prête à être ajoutée."
+]);
+
+preciser("static/graphiques.js", "anneau", [
+  ["parts", "Tableau de { libelle, valeur, couleur }."],
+  ["total", "Somme des valeurs, ou 1 si tout est nul."],
+  ["--part", "Pourcentage du cercle pour un segment."],
+  ["legende", "Liste : pastille de la couleur, libellé et valeur."]
+], [
+  "Ignore une part de valeur nulle.",
+  "Décale le segment suivant avec strokeDashoffset.",
+  "Renvoie l'anneau et sa légende."
+]);
+
+preciser("static/cookies.js", "Revoir le bandeau", [
+  ["#cookies-oublier", "Bouton de la page Gestion des cookies."],
+  ["fiches-cookies", "Clé retirée du stockage local. Les cookies HTTP ne sont pas effacés."]
+], [
+  "Au clic, retire fiches-cookies.",
+  "Affiche que le bandeau reviendra au prochain affichage."
+]);
+
+preciser("legal/routes.py", "mentions", [
+  ["retour", "Le modèle templates/legal/mentions.html. Aucune lecture de la base."]
+], [
+  "Répond à GET /legal/mentions."
+]);
+
+preciser("legal/routes.py", "confidentialite", [
+  ["retour", "Le modèle templates/legal/confidentialite.html."]
+], [
+  "Répond à GET /legal/confidentialite."
+]);
+
+preciser("legal/routes.py", "cookies", [
+  ["retour", "Le modèle templates/legal/cookies.html, avec cookies.js."]
+], [
+  "Répond à GET /legal/cookies."
+]);
+
+preciser("legal/routes.py", "licences", [
+  ["retour", "Le modèle templates/legal/licences.html."]
+], [
+  "Répond à GET /legal/licences."
+]);
+
+preciser("static/style.css", ".menu-liste", [
+  ["summary", "Pilule blanche, bord forêt, sans puce de liste."],
+  [".menu-panneau", "Panneau absolu, fond blanc, ombre, liens et boutons empilés."]
+], ["S'ouvre au clic sur le résumé. Le panneau passe au-dessus du contenu."]);
+
+preciser("static/style.css", ".menu-legal", [
+  ["display", "flex, centré, avec retour à la ligne."]
+], ["Quatre liens du pied de page."]);
+
+preciser("static/style.css", ".barre-fiche", [
+  ["display", "flex, avec retour à la ligne."]
+], ["Étoile à gauche, menu Actions à côté."]);
+
+preciser("static/style.css", ".onglets", [
+  ["button[aria-selected=true]", "Texte forêt foncée, bord bas forêt."]
+], ["Les autres boutons restent sans bord et en encre douce."]);
+
+preciser("static/style.css", ".piste", [
+  ["span", "Largeur 0 au départ, animation jusqu'à --largeur en 0,8 s."],
+  ["@keyframes remplir", "Termine sur width: var(--largeur)."]
+], ["Rail beige, remplissage forêt."]);
+
+preciser("static/style.css", ".anneau", [
+  ["width", "9rem."],
+  [".segment", "stroke-dasharray part de 0 et va jusqu'à --part."],
+  ["@keyframes tracer", "Termine sur la part du cercle."]
+], ["L'anneau tourne de -90 degrés pour commencer en haut."]);
+
+preciser("static/style.css", ".banniere-cookies", [
+  ["position", "fixed, en bas, au-dessus du contenu."],
+  ["p", "Prend la place restante, au moins 16rem avant de passer à la ligne."]
+], ["Cachée tant que hidden est posé."]);
 
 preciser("static/common.js", "monterRechercheFiches", [
   ["formulaire", "Formulaire de recherche de fiches : texte, auteur, étoiles minimum."],
@@ -596,3 +765,36 @@ preciser("static/style.css", "petit écran", [
   [".barre", "flex-direction column, align-items flex-start."],
   ["main", "Largeur min(100% - 1.2rem, 980px)."]
 ], ["Le bandeau n'écrase plus le menu sur un téléphone."]);
+
+(function () {
+  function remplacer(fichier, nom, ancien, nouveau) {
+    var fiche = window.PRECISIONS[fichier + "\n" + nom];
+    if (!fiche) return;
+    fiche.actions = fiche.actions.map(function (ligne) {
+      return ligne.indexOf(ancien) === -1 ? ligne : ligne.split(ancien).join(nouveau);
+    });
+  }
+  var creation = window.PRECISIONS["app.py\ncreate_app"];
+  if (creation) {
+    var deja = creation.actions.some(function (ligne) {
+      return ligne.indexOf("legal_bp") !== -1;
+    });
+    if (!deja) {
+      var retour = creation.actions.pop();
+      creation.actions.push("Exécute app.register_blueprint(legal_bp). app.register_blueprint(legal_bp)");
+      if (retour) creation.actions.push(retour);
+    }
+  }
+  remplacer(
+    "utils/access.py",
+    "forcer_mot_de_passe",
+    "request.path.startswith(('/static/', '/auth/static/'))",
+    "request.path.startswith(('/static/', '/auth/static/', '/legal/'))"
+  );
+  remplacer(
+    "utils/site_gate.py",
+    "bloquer_si_suspendu",
+    "request.path.startswith('/static/')",
+    "request.path.startswith(('/static/', '/legal/'))"
+  );
+})();
