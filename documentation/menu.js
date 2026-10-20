@@ -76,7 +76,18 @@
     ol.className = "actions-doc";
     actions.forEach(function (texte) {
       var li = document.createElement("li");
-      li.textContent = texte;
+      var coupure = texte.lastIndexOf(". ");
+      var expr = coupure === -1 ? "" : texte.slice(coupure + 2);
+      var avant = coupure === -1 ? "" : texte.slice(0, coupure);
+      if (!expr || avant.slice(-expr.length) !== expr) {
+        li.textContent = texte;
+      } else {
+        li.append(document.createTextNode(texte.slice(0, coupure + 2)));
+        var rappel = document.createElement("strong");
+        rappel.className = "rappel-code";
+        rappel.textContent = expr;
+        li.append(rappel);
+      }
       ol.append(li);
     });
     return ol;

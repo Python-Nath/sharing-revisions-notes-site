@@ -231,6 +231,11 @@ table.variables th {
 
 .actions-doc li { margin: 0.45rem 0; }
 
+.rappel-code {
+  color: #c62828;
+  font-weight: 700;
+}
+
 .compte {
   margin: 0 0 0.5rem;
   color: var(--douce);
