@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titre %}Politique de confidentialité — Fiches de révision{% endblock %}
+{% block contenu %}
+  <article class="panneau etroit">
+    <h1>Politique de confidentialité</h1>
+    <p>Cette page décrit les données réellement enregistrées. Rien n'est vendu, rien n'est envoyé à un service publicitaire.</p>
+    <h2>Compte</h2>
+    <p>Un compte garde le prénom, le nom, l'identifiant, le rôle, l'état suspendu ou non, et la date de création. Le mot de passe est stocké sous forme de hash. Le texte saisi n'est pas conservé.</p>
+    <h2>Fiches</h2>
+    <p>Le fichier envoyé, son titre, sa description, le cours et le nom d'origine du document sont gardés tant que la fiche n'est pas supprimée. La suppression retire le fichier, sa description, les étoiles et les commentaires liés.</p>
+    <h2>Activité</h2>
+    <p>Le compte retient les identifiants des fiches qu'il a envoyées et téléchargées. Une étoile relie un compte à une fiche. Un commentaire garde le texte, l'auteur, la visibilité choisie et, s'il est suivi, le compte qui s'en occupe.</p>
+    <h2>Session</h2>
+    <p>À la connexion, une session est ouverte jusqu'à expiration du jeton, huit heures, ou jusqu'à la déconnexion. Elle retient l'identifiant du compte, les dates d'ouverture et de dernière activité, et le nom du navigateur, raccourci. L'adresse IP n'est pas enregistrée dans cette table.</p>
+    <h2>Qui peut lire quoi</h2>
+    <p>L'élève voit ses fiches et les commentaires qui lui sont destinés. L'équipe voit les commentaires qui lui sont adressés. Le propriétaire voit les chiffres du site et les sessions. Le mot de passe n'est montré à personne.</p>
+    <h2>Durée</h2>
+    <p>Les données restent tant que le compte et les fiches existent. La déconnexion ferme la session. Un compte suspendu ne peut plus se connecter, mais ses fiches déjà publiées restent jusqu'à suppression.</p>
+  </article>
+{% endblock %}

@@ -34,7 +34,7 @@ def forcer_mot_de_passe():
     user = load_current_user()
     if user is None or user.is_ban or not user.must_change_password:
         return None
-    if request.endpoint in _PAGES_MOT_DE_PASSE or request.path.startswith(("/static/", "/auth/static/")):
+    if request.endpoint in _PAGES_MOT_DE_PASSE or request.path.startswith(("/static/", "/auth/static/", "/legal/")):
         return None
     if wants_html():
         return redirect("/auth/mot-de-passe")

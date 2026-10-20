@@ -123,7 +123,7 @@ def bloquer_si_suspendu():
     etat = lire_etat()
     if not etat["suspended"]:
         return None
-    if request.endpoint in _ENDPOINTS_OUVERTS or request.path.startswith("/static/"):
+    if request.endpoint in _ENDPOINTS_OUVERTS or request.path.startswith(("/static/", "/legal/")):
         return None
     if _est_proprietaire():
         return None

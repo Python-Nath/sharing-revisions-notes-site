@@ -19,7 +19,20 @@
   <main id="contenu">
     {% block contenu %}{% endblock %}
   </main>
-  <footer class="pied">Partage de fiches entre élèves</footer>
+  <footer class="pied">
+    <p>Partage de fiches entre élèves</p>
+    <nav class="menu-legal" aria-label="Informations légales">
+      <a href="/legal/mentions">Mentions légales</a>
+      <a href="/legal/confidentialite">Politique de confidentialité</a>
+      <a href="/legal/cookies">Gestion des cookies</a>
+      <a href="/legal/licences">Licences</a>
+    </nav>
+  </footer>
+  <div id="banniere-cookies" class="banniere-cookies" hidden>
+    <p>Seuls les cookies de connexion et de sécurité sont déposés. Pas de mesure d'audience.</p>
+    <a href="/legal/cookies">Gestion des cookies</a>
+    <button id="cookies-ok" class="bouton" type="button">J'ai compris</button>
+  </div>
   <script src="{{ url_for('static', filename='common.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>

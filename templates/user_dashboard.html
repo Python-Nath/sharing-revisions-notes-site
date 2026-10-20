@@ -4,7 +4,13 @@
   <section class="intro">
     <h1>Mon espace</h1>
     <p>Bonjour {{ profil.name }} {{ profil.surname }}. Voici tes fiches.</p>
-    <p><a class="bouton bouton-secondaire" href="/users/audit">Audit de mes fiches</a></p>
+    <details class="menu-liste">
+      <summary>Mon menu</summary>
+      <div class="menu-panneau">
+        <a href="/users/audit">Audit de mes fiches</a>
+        <a href="/accueil">Publier une fiche</a>
+      </div>
+    </details>
   </section>
 
   <section class="panneau">

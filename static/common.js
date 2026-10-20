@@ -321,7 +321,6 @@ function zoneCommentaires(fiche) {
   bloc.className = "commentaires";
   const ouvrir = document.createElement("button");
   ouvrir.type = "button";
-  ouvrir.className = "bouton bouton-secondaire";
   ouvrir.textContent = "Commentaires";
   const panneau = document.createElement("div");
   panneau.hidden = true;
@@ -331,8 +330,8 @@ function zoneCommentaires(fiche) {
     if (!panneau.hidden) dessinerCommentaires(fiche, panneau);
   });
   ouvrir.setAttribute("aria-expanded", "false");
-  bloc.append(ouvrir, panneau);
-  return bloc;
+  bloc.append(panneau);
+  return { bloc: bloc, ouvrir: ouvrir };
 }
 
 /* Carte d'une fiche. Le texte vient de textContent, jamais de innerHTML. */
@@ -357,40 +356,45 @@ function carteFiche(fiche, actions) {
   fichier.textContent = fiche.original_filename || "";
 
   const barre = document.createElement("div");
-  barre.className = "actions";
+  barre.className = "barre-fiche";
+  if (fiche.id) barre.append(boutonEtoile(fiche));
+  const menu = document.createElement("details");
+  menu.className = "menu-liste";
+  const resume = document.createElement("summary");
+  resume.textContent = "Actions";
+  const panneau = document.createElement("div");
+  panneau.className = "menu-panneau";
   const lien = document.createElement("a");
-  lien.className = "bouton";
   lien.textContent = "Télécharger";
   lien.href = "/download/"
     + encodeURIComponent(fiche.matiere) + "/"
     + encodeURIComponent(fiche.classe) + "/"
     + encodeURIComponent(fiche.specialite) + "/"
     + encodeURIComponent(fiche.id);
-  barre.append(lien);
-
+  panneau.append(lien);
   (actions || []).forEach(function (action) {
     if (action.href) {
       const aller = document.createElement("a");
-      aller.className = "bouton bouton-secondaire";
       aller.href = action.href;
       aller.textContent = action.libelle;
-      barre.append(aller);
+      panneau.append(aller);
       return;
     }
     const bouton = document.createElement("button");
     bouton.type = "button";
-    bouton.className = "bouton " + (action.classe || "bouton-secondaire");
     bouton.textContent = action.libelle;
     bouton.addEventListener("click", action.onClick);
-    barre.append(bouton);
+    panneau.append(bouton);
   });
-
-  const ligneEtoile = document.createElement("div");
-  ligneEtoile.className = "actions";
-  if (fiche.id) ligneEtoile.append(boutonEtoile(fiche));
-
-  carte.append(titre, meta, description, fichier, ligneEtoile, barre);
-  if (fiche.id) carte.append(zoneCommentaires(fiche));
+  if (fiche.id) {
+    const commentaires = zoneCommentaires(fiche);
+    panneau.append(commentaires.ouvrir);
+    carte.append(titre, meta, description, fichier, barre, commentaires.bloc);
+  } else {
+    carte.append(titre, meta, description, fichier, barre);
+  }
+  menu.append(resume, panneau);
+  barre.append(menu);
   return carte;
 }
 
@@ -662,9 +666,12 @@ function remplirNavigation() {
       window.location.assign("/auth/mot-de-passe");
       return;
     } else {
-      const sortie = document.createElement("a");
-      sortie.href = "/auth/logout-page";
-      sortie.textContent = "Déconnexion";
+      const menuCompte = document.createElement("details");
+      menuCompte.className = "menu-liste";
+      const resumeCompte = document.createElement("summary");
+      resumeCompte.textContent = compte.name;
+      const panneauCompte = document.createElement("div");
+      panneauCompte.className = "menu-panneau";
       if (!compte.must_change_password) {
         const espace = document.createElement("a");
         espace.href = lienEspace(compte.role);
@@ -672,9 +679,14 @@ function remplirNavigation() {
         const motDePasse = document.createElement("a");
         motDePasse.href = "/auth/mot-de-passe";
         motDePasse.textContent = "Mot de passe";
-        zone.append(espace, motDePasse);
+        panneauCompte.append(espace, motDePasse);
       }
-      zone.append(sortie);
+      const sortie = document.createElement("a");
+      sortie.href = "/auth/logout-page";
+      sortie.textContent = "Déconnexion";
+      panneauCompte.append(sortie);
+      menuCompte.append(resumeCompte, panneauCompte);
+      zone.append(menuCompte);
       const salut = document.getElementById("salut");
       if (salut) salut.textContent = "Bonjour " + compte.name + " " + compte.surname + ".";
     }
@@ -682,8 +694,21 @@ function remplirNavigation() {
   });
 }
 
+function preparerCookies() {
+  const bandeau = document.getElementById("banniere-cookies");
+  const bouton = document.getElementById("cookies-ok");
+  if (!bandeau || !bouton) return;
+  if (localStorage.getItem("fiches-cookies") === "compris") return;
+  bandeau.hidden = false;
+  bouton.addEventListener("click", function () {
+    localStorage.setItem("fiches-cookies", "compris");
+    bandeau.hidden = true;
+  });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   remplirNavigation();
+  preparerCookies();
   const flash = sessionStorage.getItem("flash");
   if (!flash) return;
   sessionStorage.removeItem("flash");

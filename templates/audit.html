@@ -5,21 +5,43 @@
     <h1>Audit du site</h1>
     <p>Bonjour {{ profil.name }} {{ profil.surname }}. Ce relevé est réservé au propriétaire.</p>
     <p id="etat-site" class="note"></p>
-    <div class="actions">
-      <button id="bouton-site" class="bouton bouton-danger" type="button">Suspendre le site</button>
-      <button id="bouton-actualiser" class="bouton bouton-secondaire" type="button">Actualiser</button>
-      <a class="bouton bouton-secondaire" href="/admin/dashboard">Modérer les fiches</a>
-      <a class="bouton bouton-secondaire" href="/admin/comptes-page">Gérer les comptes</a>
-    </div>
+    <details class="menu-liste">
+      <summary>Pilotage</summary>
+      <div class="menu-panneau">
+        <button id="bouton-site" type="button">Suspendre le site</button>
+        <button id="bouton-actualiser" type="button">Actualiser</button>
+        <a href="/admin/dashboard">Modérer les fiches</a>
+        <a href="/admin/comptes-page">Gérer les comptes</a>
+      </div>
+    </details>
   </section>
   <p id="statut" class="statut" role="status"></p>
 
+  <div class="onglets" role="tablist" aria-label="Sections de l'audit">
+    <button type="button" role="tab" data-onglet="vue" aria-selected="true">Vue d'ensemble</button>
+    <button type="button" role="tab" data-onglet="sessions" aria-selected="false">Sessions</button>
+    <button type="button" role="tab" data-onglet="contenu" aria-selected="false">Contenu</button>
+    <button type="button" role="tab" data-onglet="etoiles" aria-selected="false">Étoiles</button>
+    <button type="button" role="tab" data-onglet="securite" aria-selected="false">Sécurité</button>
+  </div>
+
+  <div id="onglet-vue" class="onglet">
+    <section class="panneau">
+      <h2>Vue d'ensemble</h2>
+      <div id="graphiques" class="graphiques"></div>
+    </section>
+  </div>
+
+  <div id="onglet-sessions" class="onglet" hidden>
   <section class="panneau">
     <h2>Utilisateurs connectés</h2>
     <p class="note">Une session reste dans la liste jusqu'à expiration du jeton ou déconnexion. « En ligne » veut dire une activité dans les 15 dernières minutes. La page se rafraîchit toute seule.</p>
     <div id="zone-sessions"></div>
   </section>
 
+  </div>
+
+  <div id="onglet-contenu" class="onglet" hidden>
   <section class="panneau">
     <h2>Stockage</h2>
     <div id="zone-stockage" class="grille-stats"></div>
@@ -38,16 +60,6 @@
     <div id="zone-auteurs"></div>
     <h3>Comptes qui téléchargent le plus</h3>
     <div id="zone-lecteurs"></div>
-  </section>
-
-  <section class="panneau">
-    <h2>Étoiles</h2>
-    <p class="note">La fiche la plus étoilée du site, puis la ou les fiches en tête de chaque matière.</p>
-    <div id="zone-etoiles" class="grille-stats"></div>
-    <h3>La plus étoilée</h3>
-    <div id="zone-etoile-globale"></div>
-    <h3>En tête par matière</h3>
-    <div id="zone-etoiles-matiere"></div>
   </section>
 
   <section class="panneau">
@@ -70,7 +82,21 @@
     <div id="zone-orphelins"></div>
     <p id="zone-types" class="note"></p>
   </section>
+  </div>
 
+  <div id="onglet-etoiles" class="onglet" hidden>
+  <section class="panneau">
+    <h2>Étoiles</h2>
+    <p class="note">La fiche la plus étoilée du site, puis la ou les fiches en tête de chaque matière.</p>
+    <div id="zone-etoiles" class="grille-stats"></div>
+    <h3>La plus étoilée</h3>
+    <div id="zone-etoile-globale"></div>
+    <h3>En tête par matière</h3>
+    <div id="zone-etoiles-matiere"></div>
+  </section>
+  </div>
+
+  <div id="onglet-securite" class="onglet" hidden>
   <section class="panneau">
     <h2>Sécurité</h2>
     <div id="zone-securite" class="grille-stats"></div>
@@ -79,9 +105,11 @@
     <h3>Comptes suspendus</h3>
     <div id="zone-bannis"></div>
   </section>
+  </div>
 
   <script id="audit-data" type="application/json">{{ audit|tojson }}</script>
 {% endblock %}
 {% block scripts %}
+  <script src="{{ url_for('static', filename='graphiques.js') }}"></script>
   <script src="{{ url_for('static', filename='audit.js') }}"></script>
 {% endblock %}

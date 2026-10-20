@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titre %}Licences — Fiches de révision{% endblock %}
+{% block contenu %}
+  <article class="panneau etroit">
+    <h1>Licences</h1>
+    <p>Le code du site est celui de ce dépôt. Les bibliothèques ci-dessous gardent leur propre licence. Les fiches envoyées par les élèves restent la propriété de leurs auteurs.</p>
+    <ul>
+      <li>Flask, licence BSD à trois clauses.</li>
+      <li>Werkzeug, licence BSD à trois clauses.</li>
+      <li>Flask-SQLAlchemy, licence BSD à trois clauses.</li>
+      <li>SQLAlchemy, licence MIT.</li>
+      <li>Flask-JWT-Extended, licence MIT.</li>
+      <li>Gunicorn, licence MIT.</li>
+      <li>Requests, licence Apache 2.0.</li>
+    </ul>
+    <p>Les textes de ces licences sont ceux publiés avec chaque bibliothèque dans l'environnement Python du serveur.</p>
+  </article>
+{% endblock %}

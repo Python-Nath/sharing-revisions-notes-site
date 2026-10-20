@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titre %}Gestion des cookies — Fiches de révision{% endblock %}
+{% block contenu %}
+  <article class="panneau etroit">
+    <h1>Gestion des cookies</h1>
+    <p>Le site ne dépose que des cookies nécessaires à la connexion et à la protection des formulaires. Il n'y a pas de cookie de mesure d'audience ni de publicité.</p>
+    <h2>Cookies utilisés</h2>
+    <ul>
+      <li><strong>Cookie de session</strong>. Déposé à la connexion, HttpOnly : le JavaScript de la page ne peut pas le lire. Il identifie le compte pendant huit heures.</li>
+      <li><strong>Cookie CSRF</strong>. Déposé en même temps. Le script l'envoie avec les actions qui modifient quelque chose, pour qu'un autre site ne puisse pas agir à ta place.</li>
+    </ul>
+    <h2>Ce qui n'est pas un cookie</h2>
+    <p>Le bandeau d'information mémorise ton accusé dans le stockage local du navigateur, sous le nom <code>fiches-cookies</code>. Ce n'est pas envoyé au serveur.</p>
+    <h2>Refus</h2>
+    <p>Sans le cookie de session, la connexion ne tient pas. Le refuser revient à se déconnecter. Tu peux effacer les cookies du site dans le navigateur, ou utiliser le bouton ci-dessous pour revoir le bandeau.</p>
+    <button id="cookies-oublier" class="bouton bouton-secondaire" type="button">Revoir le bandeau</button>
+    <p id="statut" class="statut" role="status"></p>
+  </article>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='cookies.js') }}"></script>
+{% endblock %}

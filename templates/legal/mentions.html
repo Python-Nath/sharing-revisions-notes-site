@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titre %}Mentions légales — Fiches de révision{% endblock %}
+{% block contenu %}
+  <article class="panneau etroit">
+    <h1>Mentions légales</h1>
+    <p>Ce site sert à partager des fiches de révision entre élèves. Il n'est pas un réseau social et ne diffuse pas de publicité.</p>
+    <h2>Éditeur</h2>
+    <p>Le site est édité par son propriétaire, le compte dont le rôle est « owner ». C'est la seule personne qui peut suspendre le service. Il n'y a pas d'autre éditeur.</p>
+    <h2>Hébergement</h2>
+    <p>Le site est hébergé sur la machine qui exécute l'application. Les fiches restent dans les dossiers <code>matiere/</code> et <code>uploads/</code> de cette machine. Les comptes sont dans une base SQLite locale.</p>
+    <h2>Contact</h2>
+    <p>Pour une question sur un contenu ou un compte, écris au propriétaire du site par le moyen qu'il a indiqué à l'établissement. Le site lui-même n'envoie pas d'e-mail.</p>
+    <h2>Contenu publié</h2>
+    <p>Chaque fiche est publiée par un compte. L'auteur affiché est l'identifiant de ce compte. Un élève ne modifie que ses propres fiches. Les modérateurs, les administrateurs et le propriétaire peuvent retirer un contenu.</p>
+  </article>
+{% endblock %}

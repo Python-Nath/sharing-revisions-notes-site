@@ -4,16 +4,20 @@
   <section class="intro">
     <h1>Audit de mes fiches</h1>
     <p>Bonjour {{ profil.name }} {{ profil.surname }}. Ce relevé ne contient que tes fiches : pas celles des autres, pas les sessions du site.</p>
-    <div class="actions">
-      <a class="bouton bouton-secondaire" href="/users/dashboard">Retour à mes fiches</a>
-      <button id="bouton-actualiser" class="bouton bouton-secondaire" type="button">Actualiser</button>
-    </div>
+    <details class="menu-liste">
+      <summary>Actions</summary>
+      <div class="menu-panneau">
+        <a href="/users/dashboard">Retour à mes fiches</a>
+        <button id="bouton-actualiser" type="button">Actualiser</button>
+      </div>
+    </details>
   </section>
   <p id="statut" class="statut" role="status"></p>
 
   <section class="panneau">
     <h2>Mes chiffres</h2>
-    <div id="zone-resume" class="grille-stats"></div>
+    <div id="graphique-perso" class="graphiques"></div>
+    <div id="zone-resume" class="grille-stats" hidden></div>
     <p id="zone-plus" class="note"></p>
   </section>
 
@@ -31,5 +35,6 @@
   <script id="audit-data" type="application/json">{{ audit|tojson }}</script>
 {% endblock %}
 {% block scripts %}
+  <script src="{{ url_for('static', filename='graphiques.js') }}"></script>
   <script src="{{ url_for('static', filename='audit_perso.js') }}"></script>
 {% endblock %}

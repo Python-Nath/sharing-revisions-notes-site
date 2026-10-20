@@ -116,6 +116,27 @@ document.addEventListener("DOMContentLoaded", function () {
       carte("Pris en charge", nombre(commentaires.pris)),
       carte("Validés", nombre(commentaires.valides))
     );
+    const graphique = document.getElementById("graphique-perso");
+    if (graphique && typeof barreAnimee === "function") {
+      graphique.replaceChildren();
+      const maxEtoiles = (audit.liste || []).reduce(function (max, fiche) {
+        return Math.max(max, fiche.etoiles || 0);
+      }, 0);
+      (audit.liste || []).slice(0, 8).forEach(function (fiche) {
+        graphique.append(barreAnimee(
+          fiche.titre,
+          fiche.etoiles || 0,
+          maxEtoiles || 1,
+          nombre(fiche.etoiles) + " étoiles"
+        ));
+      });
+      if (!(audit.liste || []).length) {
+        const vide = document.createElement("p");
+        vide.className = "vide";
+        vide.textContent = "Aucune fiche à dessiner.";
+        graphique.append(vide);
+      }
+    }
     const plus = document.getElementById("zone-plus");
     plus.textContent = audit.plus_etoilee
       ? "Ta fiche la plus étoilée : " + audit.plus_etoilee.titre

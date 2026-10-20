@@ -458,6 +458,15 @@ def scenario():
     verifier(accueil.status_code == 200, "l'accueil ne répond pas")
     verifier("Fiches de révision" in accueil.get_data(as_text=True), "titre d'accueil absent")
     verifier("Rechercher une fiche" in accueil.get_data(as_text=True), "la recherche de fiches manque à l'accueil")
+    verifier("Mentions légales" in accueil.get_data(as_text=True), "le pied de page légal manque")
+    for adresse, titre in (
+        ("/legal/mentions", "Mentions légales"),
+        ("/legal/confidentialite", "Politique de confidentialité"),
+        ("/legal/cookies", "Gestion des cookies"),
+        ("/legal/licences", "Licences"),
+    ):
+        page_legale = client.get(adresse)
+        verifier(page_legale.status_code == 200 and titre in page_legale.get_data(as_text=True), adresse)
 
     racine = client.get("/", follow_redirects=False)
     verifier(racine.status_code == 302 and racine.location.endswith("/accueil"), "la racine ne redirige pas")

@@ -24,6 +24,7 @@ from auth.routes import auth_bp
 from database.model import User, db
 from fiches.routes import fiches_bp
 from info.routes import info_bp
+from legal.routes import legal_bp
 from moderator.routes import moderator_bp
 from owner.routes import owner_bp
 from users.routes import users_bp
@@ -246,6 +247,7 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(owner_bp)
     app.register_blueprint(fiches_bp)
+    app.register_blueprint(legal_bp)
     return app
 
 

@@ -380,6 +380,67 @@ document.addEventListener("DOMContentLoaded", function () {
       }),
       "Aucun compte suspendu."
     ));
+    dessinerGraphiques(site, stockage, comptes, roles, activite, contenu, etoilesDe(audit));
+  }
+
+  function etoilesDe(releve) {
+    return releve.etoiles || {};
+  }
+
+  function dessinerGraphiques(site, stockage, comptes, roles, activite, contenu, etoiles) {
+    const zone = document.getElementById("graphiques");
+    if (!zone || typeof anneau !== "function") return;
+    zone.replaceChildren();
+    const rolesParts = [
+      { libelle: "Élèves", valeur: roles.user || 0, couleur: "#1d6b4f" },
+      { libelle: "Modérateurs", valeur: roles.moderator || 0, couleur: "#1d4e89" },
+      { libelle: "Administrateurs", valeur: roles.admin || 0, couleur: "#b86b12" },
+      { libelle: "Propriétaire", valeur: roles.owner || 0, couleur: "#6b3fa0" }
+    ];
+    const blocRoles = document.createElement("div");
+    const titreRoles = document.createElement("h3");
+    titreRoles.textContent = "Comptes";
+    blocRoles.append(titreRoles, anneau(rolesParts));
+    const blocStock = document.createElement("div");
+    const titreStock = document.createElement("h3");
+    titreStock.textContent = "Disque";
+    blocStock.append(
+      titreStock,
+      barreAnimee("Utilisé", stockage.disque_utilise_octets || 0, stockage.disque_total_octets || 0, octets(stockage.disque_utilise_octets)),
+      barreAnimee("Libre", stockage.disque_libre_octets || 0, stockage.disque_total_octets || 0, octets(stockage.disque_libre_octets))
+    );
+    const blocMatiere = document.createElement("div");
+    const titreMatiere = document.createElement("h3");
+    titreMatiere.textContent = "Fiches par matière";
+    blocMatiere.append(titreMatiere);
+    const matieres = (contenu.par_matiere || []).slice(0, 8);
+    const maxFiches = matieres.reduce(function (max, ligne) {
+      return Math.max(max, ligne.fiches || 0);
+    }, 0);
+    matieres.forEach(function (ligne) {
+      blocMatiere.append(barreAnimee(ligne.nom, ligne.fiches || 0, maxFiches, nombre(ligne.fiches) + " fiches"));
+    });
+    const blocEtoiles = document.createElement("div");
+    const titreEtoiles = document.createElement("h3");
+    titreEtoiles.textContent = "Étoiles";
+    blocEtoiles.append(titreEtoiles);
+    if (etoiles.plus_etoilee) {
+      const phrase = document.createElement("p");
+      phrase.textContent = etoiles.plus_etoilee.titre + " · " + nombre(etoiles.plus_etoilee.etoiles);
+      blocEtoiles.append(phrase);
+    }
+    (etoiles.par_matiere || []).slice(0, 6).forEach(function (groupe) {
+      const fiche = (groupe.fiches || [])[0];
+      if (!fiche) return;
+      blocEtoiles.append(barreAnimee(groupe.matiere, fiche.etoiles || 0, etoiles.plus_etoilee ? etoiles.plus_etoilee.etoiles : fiche.etoiles, fiche.titre));
+    });
+    zone.append(blocRoles, blocStock, blocMatiere, blocEtoiles);
+    if (site.suspendu) {
+      const pause = document.createElement("p");
+      pause.className = "note";
+      pause.textContent = "Le site est suspendu.";
+      zone.prepend(pause);
+    }
   }
 
   function appliquer(data, message) {
@@ -427,6 +488,17 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
       appliquer(reponse.data, suspendre ? "Site suspendu." : "Site réactivé.");
+    });
+  });
+
+  document.querySelectorAll("[data-onglet]").forEach(function (bouton) {
+    bouton.addEventListener("click", function () {
+      document.querySelectorAll("[data-onglet]").forEach(function (autre) {
+        autre.setAttribute("aria-selected", autre === bouton ? "true" : "false");
+      });
+      document.querySelectorAll(".onglet").forEach(function (panneau) {
+        panneau.hidden = panneau.id !== "onglet-" + bouton.dataset.onglet;
+      });
     });
   });
 
