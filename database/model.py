@@ -101,5 +101,7 @@ class Comment(db.Model):
     body = db.Column(db.String(2000), nullable=False)
     status = db.Column(db.String(20), nullable=False, default="ouvert")
     handler_id = db.Column(db.String(36), nullable=True, index=True)
+    # Vrai quand la personne qui suit le commentaire a ensuite modifié la fiche.
+    corrected = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, nullable=False)
     updated_at = db.Column(db.DateTime, nullable=False)

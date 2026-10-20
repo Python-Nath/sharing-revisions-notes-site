@@ -5,9 +5,10 @@ Trois visibilités :
 - equipe : l'auteur du commentaire, les modérateurs, les admins, le propriétaire
 - les_deux : les deux cercles
 
-La prise en charge est unique. Le premier membre de l'équipe qui dit
-« je m'en occupe » devient le seul à pouvoir valider, tant qu'il garde
-un rôle d'équipe et que son compte n'est pas suspendu.
+La prise en charge est unique. L'auteur de la fiche, un modérateur,
+un administrateur ou le propriétaire peut suivre le commentaire.
+Après avoir enregistré une modification de la fiche, cette personne
+peut le retirer. Tant que le responsable est actif, lui seul valide.
 """
 
 from datetime import datetime, timedelta, timezone
@@ -53,21 +54,43 @@ def peut_voir(user, comment, auteur_fiche):
     return False
 
 
+def _peut_suivre(user, auteur_fiche):
+    """L'auteur de la fiche, ou un membre de l'équipe, peut suivre un commentaire."""
+    if user is None or user.is_ban:
+        return False
+    if user.username == auteur_fiche:
+        return True
+    return user.role in EQUIPE
+
+
 def _responsable_actif(handler_id):
     if not handler_id:
         return None
     handler = db.session.get(User, handler_id)
-    if handler is None or handler.is_ban or handler.role not in EQUIPE:
+    if handler is None or handler.is_ban:
         return None
-    return handler
+    if handler.role in EQUIPE or handler.role == "user":
+        return handler
+    return None
 
 
 def peut_prendre(user, comment, auteur_fiche):
     return (
-        _equipe(user)
+        _peut_suivre(user, auteur_fiche)
         and peut_voir(user, comment, auteur_fiche)
         and comment.status == "ouvert"
         and not comment.handler_id
+    )
+
+
+def peut_retirer(user, comment, auteur_fiche):
+    """Vrai si cette personne suit le commentaire et a modifié la fiche ensuite."""
+    return (
+        _peut_suivre(user, auteur_fiche)
+        and peut_voir(user, comment, auteur_fiche)
+        and comment.handler_id == user.id
+        and comment.status in ("pris", "valide")
+        and bool(comment.corrected)
     )
 
 
@@ -99,6 +122,8 @@ def _presenter(comment, user, auteur_fiche):
         "le": _iso(comment.created_at),
         "peut_prendre": peut_prendre(user, comment, auteur_fiche),
         "peut_valider": peut_valider(user, comment, auteur_fiche),
+        "peut_retirer": peut_retirer(user, comment, auteur_fiche),
+        "suivi": comment.handler_id == user.id and comment.status in ("pris", "valide"),
     }
 
 
@@ -149,6 +174,7 @@ def publier(user, file_id, body, audience):
         body=texte,
         status="ouvert",
         handler_id=None,
+        corrected=False,
         created_at=maintenant,
         updated_at=maintenant,
     )
@@ -168,8 +194,8 @@ def prendre(user, file_id, comment_id):
     auteur_fiche = _auteur_fiche(meta)
     if comment is None or comment.file_id != file_id or not peut_voir(user, comment, auteur_fiche):
         return None, ("Commentaire introuvable", 404)
-    if not _equipe(user):
-        return None, ("Seul un modérateur, un administrateur ou le propriétaire peut s'en charger.", 403)
+    if not _peut_suivre(user, auteur_fiche):
+        return None, ("Seul l'auteur de la fiche, un modérateur, un administrateur ou le propriétaire peut suivre ce commentaire.", 403)
     if comment.status == "pris" and comment.handler_id == user.id:
         return {"commentaire": _presenter(comment, user, auteur_fiche)}, None
     if comment.status != "ouvert" or comment.handler_id:
@@ -183,7 +209,7 @@ def prendre(user, file_id, comment_id):
             Comment.status == "ouvert",
             Comment.handler_id.is_(None),
         )
-        .values(status="pris", handler_id=user.id, updated_at=_maintenant())
+        .values(status="pris", handler_id=user.id, corrected=False, updated_at=_maintenant())
     )
     db.session.commit()
     db.session.expire_all()
@@ -234,3 +260,32 @@ def valider(user, file_id, comment_id):
     ):
         return {"commentaire": _presenter(comment, user, auteur_fiche)}, None
     return None, ("Seul le responsable de ce commentaire peut le valider.", 403)
+
+
+def retirer(user, file_id, comment_id):
+    """Retire le commentaire suivi, une fois la fiche modifiée par le même compte."""
+    if not is_uuid(comment_id):
+        return None, ("Commentaire introuvable", 404)
+    meta = trouver_fiche(file_id)
+    if meta is None:
+        return None, ("Fiche introuvable", 404)
+    comment = db.session.get(Comment, comment_id)
+    auteur_fiche = _auteur_fiche(meta)
+    if comment is None or comment.file_id != file_id or not peut_voir(user, comment, auteur_fiche):
+        return None, ("Commentaire introuvable", 404)
+    if comment.handler_id != user.id or not _peut_suivre(user, auteur_fiche):
+        return None, ("Seul le compte qui suit ce commentaire peut le retirer.", 403)
+    if not comment.corrected:
+        return None, ("Modifie la fiche pendant que tu suis ce commentaire, ensuite tu pourras le retirer.", 403)
+
+    resultat = Comment.query.filter(
+        Comment.id == comment_id,
+        Comment.file_id == file_id,
+        Comment.handler_id == user.id,
+        Comment.corrected.is_(True),
+        Comment.status.in_(("pris", "valide")),
+    ).delete(synchronize_session=False)
+    db.session.commit()
+    if resultat != 1:
+        return None, ("Commentaire introuvable", 404)
+    return {"message": "Commentaire retiré"}, None

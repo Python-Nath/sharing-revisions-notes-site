@@ -196,8 +196,23 @@ def store_upload(user, subject, school_class, speciality, storage, title, descri
     return jsonify({"message": "Fiche publiée", "metadata": metadata}), 201
 
 
-def update_file(owner, file_id, form, storage):
-    """Modifie le texte, la catégorie, et éventuellement le fichier d'une fiche."""
+def _noter_suivi(acteur, file_id):
+    """Le compte qui suit un commentaire vient de modifier la fiche : il pourra le retirer."""
+    if acteur is None or not is_uuid(file_id):
+        return
+    Comment.query.filter(
+        Comment.file_id == file_id,
+        Comment.handler_id == acteur.id,
+        Comment.status.in_(("pris", "valide")),
+    ).update({Comment.corrected: True}, synchronize_session=False)
+
+
+def update_file(owner, file_id, form, storage, acteur=None):
+    """Modifie le texte, la catégorie, et éventuellement le fichier d'une fiche.
+
+    acteur est le compte qui enregistre. C'est lui, et pas l'auteur affiché,
+    qui débloque le retrait des commentaires qu'il suit.
+    """
     if not is_uuid(file_id):
         return jsonify({"error": "Identifiant de fiche invalide"}), 400
     if file_id not in (owner.uploaded_files or []):
@@ -279,6 +294,7 @@ def update_file(owner, file_id, form, storage):
         owner.uploaded_metadatas = uploaded_meta
         flag_modified(owner, "uploaded_metadatas")
         _propagate_downloads(file_id, cache)
+        _noter_suivi(acteur, file_id)
         db.session.commit()
     except Exception:
         db.session.rollback()

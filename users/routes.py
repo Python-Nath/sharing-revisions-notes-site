@@ -101,7 +101,7 @@ def save_modified_file(file_id):
     user, error = require_user()
     if error:
         return error
-    return update_file(user, file_id, request.form, request.files.get("file"))
+    return update_file(user, file_id, request.form, request.files.get("file"), acteur=user)
 
 
 @users_bp.route("/dashboard/delete/<file_id>", methods=["DELETE"])

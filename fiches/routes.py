@@ -8,7 +8,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 
 from utils.access import require_user
-from utils.commentaires import lister, prendre, publier, valider
+from utils.commentaires import lister, prendre, publier, retirer, valider
 from utils.etoiles import basculer
 from utils.security import is_uuid
 
@@ -101,3 +101,16 @@ def valider_commentaire(file_id, comment_id):
     if invalide:
         return invalide
     return _reponse(*valider(user, file_id, comment_id))
+
+
+@fiches_bp.route("/<file_id>/commentaires/<comment_id>", methods=["DELETE"])
+@jwt_required()
+def retirer_commentaire(file_id, comment_id):
+    """Retire un commentaire suivi, après une modification de la fiche par le même compte."""
+    user, error = _connecte()
+    if error:
+        return error
+    invalide = _id_invalide(file_id)
+    if invalide:
+        return invalide
+    return _reponse(*retirer(user, file_id, comment_id))

@@ -203,7 +203,7 @@ function dessinerCommentaires(fiche, panneau) {
     envoyer.textContent = "Publier le commentaire";
     const note = document.createElement("p");
     note.className = "note";
-    note.textContent = "L'équipe ne voit pas un commentaire réservé à l'auteur. Elle ne peut s'en charger que s'il lui est adressé. Une seule personne peut le prendre.";
+    note.textContent = "L'équipe ne voit pas un commentaire réservé à l'auteur. Une seule personne le suit. Après avoir modifié la fiche, elle peut le retirer.";
     form.append(texte, audience, note, envoyer);
     form.addEventListener("submit", function (event) {
       event.preventDefault();
@@ -263,6 +263,33 @@ function dessinerCommentaires(fiche, panneau) {
           });
         });
         article.append(prendre);
+      }
+      if (commentaire.suivi && !commentaire.peut_retirer) {
+        const aide = document.createElement("p");
+        aide.className = "note";
+        aide.textContent = "Tu suis ce commentaire. Enregistre une modification de la fiche pour pouvoir le retirer.";
+        article.append(aide);
+      }
+      if (commentaire.peut_retirer) {
+        const retirer = document.createElement("button");
+        retirer.type = "button";
+        retirer.className = "bouton bouton-danger";
+        retirer.textContent = "Retirer le commentaire";
+        retirer.addEventListener("click", function () {
+          if (!window.confirm("Retirer ce commentaire ? La fiche a été modifiée pendant ce suivi.")) return;
+          retirer.disabled = true;
+          api("/fiches/" + encodeURIComponent(fiche.id) + "/commentaires/" + encodeURIComponent(commentaire.id), {
+            method: "DELETE"
+          }).then(function (suite) {
+            if (!suite.ok) {
+              retirer.disabled = false;
+              messageLocal(panneau, suite.data.error || "Retrait impossible", "erreur");
+              return;
+            }
+            dessinerCommentaires(fiche, panneau);
+          });
+        });
+        article.append(retirer);
       }
       if (commentaire.peut_valider) {
         const valider = document.createElement("button");

@@ -209,11 +209,11 @@ def verifier_social(client_owner):
     )
     verifier(partage.status_code == 201, partage.get_json())
     id_partage = partage.get_json()["commentaire"]["id"]
-    eleve_prend = eleve.post(
+    eleve_prend = eleve2.post(
         f"/fiches/{file_id}/commentaires/{id_partage}/prendre",
-        headers=entete_eleve,
+        headers=entete_eleve2,
     )
-    verifier(eleve_prend.status_code == 403, "un élève s'est réservé le commentaire")
+    verifier(eleve_prend.status_code == 403, "l'auteur du commentaire s'est réservé le suivi")
     pris = modo.post(
         f"/fiches/{file_id}/commentaires/{id_partage}/prendre",
         headers=entete_modo,
@@ -235,6 +235,90 @@ def verifier_social(client_owner):
         headers=entete_modo,
     )
     verifier(valide.status_code == 200 and valide.get_json()["commentaire"]["statut"] == "valide", valide.get_json())
+
+    def enregistrer(client, entete, prefixe, titre):
+        return client.post(
+            f"{prefixe}/dashboard/modify/save/{file_id}",
+            data={
+                "title": titre,
+                "desc": "Description corrigee apres suivi",
+                "matiere": "Mathematiques",
+                "classe": "1ere",
+                "specialite": "specialite",
+            },
+            headers=entete,
+        )
+
+    a_retirer = eleve2.post(
+        f"/fiches/{file_id}/commentaires",
+        json={"texte": "A retirer par l auteur", "audience": "auteur"},
+        headers=entete_eleve2,
+    )
+    verifier(a_retirer.status_code == 201, a_retirer.get_json())
+    id_retrait = a_retirer.get_json()["commentaire"]["id"]
+    suivi_eleve = eleve.post(
+        f"/fiches/{file_id}/commentaires/{id_retrait}/prendre",
+        headers=entete_eleve,
+    )
+    verifier(suivi_eleve.status_code == 200, suivi_eleve.get_json())
+    trop_tot = eleve.delete(f"/fiches/{file_id}/commentaires/{id_retrait}", headers=entete_eleve)
+    verifier(trop_tot.status_code == 403, "le commentaire part avant la modification")
+    correction = enregistrer(eleve, entete_eleve, "/users", "Synthese etoilee")
+    verifier(correction.status_code == 200, correction.get_json())
+    autre_eleve = eleve2.delete(f"/fiches/{file_id}/commentaires/{id_retrait}", headers=entete_eleve2)
+    verifier(autre_eleve.status_code == 403, "un autre élève retire le commentaire")
+    retire = eleve.delete(f"/fiches/{file_id}/commentaires/{id_retrait}", headers=entete_eleve)
+    verifier(retire.status_code == 200, retire.get_json())
+    encore = eleve.get(f"/fiches/{file_id}/commentaires", headers=entete_eleve)
+    verifier(all(item["id"] != id_retrait for item in encore.get_json()["commentaires"]), "le commentaire retiré est encore listé")
+
+    pour_modo = eleve2.post(
+        f"/fiches/{file_id}/commentaires",
+        json={"texte": "A retirer par la moderation", "audience": "equipe"},
+        headers=entete_eleve2,
+    )
+    verifier(pour_modo.status_code == 201, pour_modo.get_json())
+    id_modo = pour_modo.get_json()["commentaire"]["id"]
+    verifier(modo.post(f"/fiches/{file_id}/commentaires/{id_modo}/prendre", headers=entete_modo).status_code == 200, "le modérateur ne suit pas")
+    verifier(
+        modo.delete(f"/fiches/{file_id}/commentaires/{id_modo}", headers=entete_modo).status_code == 403,
+        "le modérateur retire avant d'avoir modifié",
+    )
+    verifier(enregistrer(eleve, entete_eleve, "/users", "Synthese etoilee").status_code == 200, "correction élève")
+    verifier(
+        modo.delete(f"/fiches/{file_id}/commentaires/{id_modo}", headers=entete_modo).status_code == 403,
+        "la modification d'un autre compte débloque le retrait",
+    )
+    verifier(
+        admin.delete(f"/fiches/{file_id}/commentaires/{id_modo}", headers=entete_admin).status_code == 403,
+        "un admin retire le commentaire suivi par le modérateur",
+    )
+    correction_modo = enregistrer(modo, entete_modo, "/moderator", "Synthese etoilee")
+    verifier(correction_modo.status_code == 200, correction_modo.get_json())
+    verifier(modo.delete(f"/fiches/{file_id}/commentaires/{id_modo}", headers=entete_modo).status_code == 200, "retrait modérateur")
+
+    pour_owner = eleve2.post(
+        f"/fiches/{file_id}/commentaires",
+        json={"texte": "A retirer par le proprietaire", "audience": "les_deux"},
+        headers=entete_eleve2,
+    )
+    verifier(pour_owner.status_code == 201, pour_owner.get_json())
+    id_owner = pour_owner.get_json()["commentaire"]["id"]
+    entete_owner = csrf(client_owner)
+    verifier(
+        client_owner.post(f"/fiches/{file_id}/commentaires/{id_owner}/prendre", headers=entete_owner).status_code == 200,
+        "le propriétaire ne suit pas",
+    )
+    verifier(
+        client_owner.delete(f"/fiches/{file_id}/commentaires/{id_owner}", headers=entete_owner).status_code == 403,
+        "le propriétaire retire avant d'avoir modifié",
+    )
+    correction_owner = enregistrer(client_owner, entete_owner, "/admin", "Synthese etoilee")
+    verifier(correction_owner.status_code == 200, correction_owner.get_json())
+    verifier(
+        client_owner.delete(f"/fiches/{file_id}/commentaires/{id_owner}", headers=entete_owner).status_code == 200,
+        "retrait propriétaire",
+    )
 
     audit_eleve = eleve.get("/users/audit", headers={"Accept": "text/html"})
     page_eleve = audit_eleve.get_data(as_text=True)

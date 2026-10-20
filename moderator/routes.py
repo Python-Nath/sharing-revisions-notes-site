@@ -108,7 +108,7 @@ def save_modified_file(file_id):
     owner, owner_error = owner_of(file_id)
     if owner_error:
         return owner_error
-    return update_file(owner, file_id, request.form, request.files.get("file"))
+    return update_file(owner, file_id, request.form, request.files.get("file"), acteur=_user)
 
 
 @moderator_bp.route("/dashboard/delete/<file_id>", methods=["DELETE"])

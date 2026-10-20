@@ -87,6 +87,7 @@ def create_app():
     with app.app_context():
         db.create_all()
         _un_seul_proprietaire()
+        _colonne_commentaire_corrigee()
 
     @jwt.token_in_blocklist_loader
     def token_revoked(_header, payload):
@@ -257,6 +258,19 @@ def _un_seul_proprietaire():
     db.session.execute(text(
         "CREATE UNIQUE INDEX IF NOT EXISTS uq_un_seul_proprietaire "
         "ON users (role) WHERE role = 'owner'"
+    ))
+    db.session.commit()
+
+
+def _colonne_commentaire_corrigee():
+    """Ajoute la colonne corrected aux bases déjà créées avant ce suivi."""
+    if db.engine.url.get_backend_name() != "sqlite":
+        return
+    lignes = db.session.execute(text("PRAGMA table_info(comments)")).all()
+    if not lignes or any(ligne[1] == "corrected" for ligne in lignes):
+        return
+    db.session.execute(text(
+        "ALTER TABLE comments ADD COLUMN corrected BOOLEAN NOT NULL DEFAULT 0"
     ))
     db.session.commit()
 
