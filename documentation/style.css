@@ -110,9 +110,9 @@ h1, h2, h3 { font-family: Georgia, Palatino, serif; line-height: 1.2; }
 
 .cadre {
   display: grid;
-  grid-template-columns: minmax(15rem, 20rem) 1fr;
+  grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
   gap: 1rem;
-  width: min(1440px, calc(100% - 2rem));
+  width: min(1680px, calc(100% - 2rem));
   margin: 0 auto 2rem;
 }
 
@@ -239,25 +239,26 @@ table.variables th {
 .visavis {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1rem;
+  gap: 1.2rem;
   align-items: start;
   margin-top: 0.6rem;
 }
 
-.colonne-code { position: sticky; top: 7.2rem; }
+.colonne-code { min-width: 0; }
 
 pre.code {
   margin: 0;
-  max-height: calc(100vh - 9rem);
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   background: #1e1e1e;
   color: #d4d4d4;
   border-radius: 0;
-  padding: 0.85rem 1rem;
+  padding: 1.1rem 1.25rem 1.4rem;
   font-family: Consolas, "Cascadia Mono", "Cascadia Code", monospace;
-  font-size: 13px;
-  line-height: 1.45;
-  white-space: pre;
+  font-size: 15px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* Thème sombre VS Code (Dark+). */
@@ -290,5 +291,5 @@ pre.code {
   .entete { flex-direction: column; align-items: stretch; position: static; }
   .cadre, .visavis { grid-template-columns: 1fr; }
   .menu, .colonne-code { position: static; max-height: none; }
-  pre.code { max-height: 28rem; }
+  pre.code { max-height: none; overflow: visible; }
 }

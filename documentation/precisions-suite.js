@@ -345,6 +345,236 @@ completer("static/accueil.js", "cheminCours", [
   ["retour", "Chaîne /info/files/matière/classe/spécialité."]
 ]);
 
+preciser("templates/base.html", "Squelette commun", [
+  ["lang", "fr sur la balise html. Toute la page est en français."],
+  ["block titre", "Titre de l'onglet. Défaut « Fiches de révision ». Chaque page le remplace."],
+  ["a.passer", "Lien d'évitement vers #contenu. Caché tant que le clavier ne le focalise pas."],
+  ["#nav-compte", "Vide dans le HTML. common.js y pose Connexion, ou le menu du compte."],
+  [".menu-legal", "Quatre liens : /legal/mentions, /legal/confidentialite, /legal/cookies, /legal/licences."],
+  ["#banniere-cookies", "Bandeau fixé en bas, attribut hidden au départ. common.js le montre si le stockage local n'a pas fiches-cookies = compris."],
+  ["#cookies-ok", "Bouton « J'ai compris ». Il cache le bandeau et écrit l'accusé dans le navigateur."],
+  ["block scripts", "Emplacement du script propre à la page, après common.js."]
+], [
+  "Le navigateur charge style.css, puis le corps : lien d'évitement, barre, contenu, pied, bandeau.",
+  "common.js remplit #nav-compte et décide d'afficher le bandeau.",
+  "La page fille remplit block contenu et, si besoin, block scripts."
+]);
+
+preciser("templates/index.html", "Accueil", [
+  ["#salut", "Vide au départ. common.js y écrit « Bonjour » suivi du prénom et du nom."],
+  ["#selecteur", "Trois listes matière, classe, spécialité, créées par monterSelecteur."],
+  ["#statut", "Message d'attente ou d'erreur, role=status."],
+  ["form-recherche.q", "Texte libre, 120 caractères, type search."],
+  ["form-recherche.auteur", "Nom d'auteur, 80 caractères."],
+  ["form-recherche.etoiles_min", "Nombre entier, de 0 à 1 000 000."],
+  ["#resultats", "Cartes de la recherche. Vide tant qu'on n'a pas envoyé le formulaire."],
+  ["#fichiers", "Cartes du cours choisi."],
+  ["#invite-connexion", "Lien vers /auth/login-page?next=/accueil. Caché dès qu'un compte est connu."],
+  ["#form-envoi", "Fichier, titre (120), description (2000). Caché sans compte. Pas de champ auteur."]
+], [
+  "accueil.js démarre le sélecteur et charge les fiches du cours.",
+  "Soumettre la recherche interroge /info/recherche et peint #resultats.",
+  "Changer de cours repeint #fichiers.",
+  "Sans compte, le formulaire de publication reste caché et l'invite de connexion apparaît.",
+  "Publier envoie le fichier vers /upload/matière/classe/spécialité."
+]);
+
+preciser("templates/user_dashboard.html", "Espace élève", [
+  ["profil.name", "Prénom affiché dans la phrase d'accueil, échappé par Jinja."],
+  ["profil.surname", "Nom affiché à côté."],
+  ["details.menu-liste", "Menu « Mon menu » : audit de mes fiches, publier une fiche."],
+  ["#envoyes", "Liste des fiches envoyées. Remplie par espace.js."],
+  ["#telecharges", "Liste des fiches téléchargées, sans Modifier ni Supprimer."],
+  ["#fiches-data", "JSON { envoyes, telecharges } déjà rendu par le serveur."]
+], [
+  "Le serveur rend la page avec le profil et le JSON des fiches.",
+  "espace.js lit fiches-data.",
+  "Il peint les envois avec Modifier et Supprimer, puis les téléchargements sans ces actions."
+]);
+
+preciser("templates/audit_perso.html", "Audit de mes fiches", [
+  ["details Actions", "Retour à /users/dashboard et bouton #bouton-actualiser."],
+  ["#graphique-perso", "Barres d'étoiles dessinées par audit_perso.js."],
+  ["#zone-resume", "Grille de chiffres, attribut hidden. Les graphiques la remplacent."],
+  ["#zone-plus", "Phrase de détail sous le graphique."],
+  ["#zone-fiches", "Tableau des fiches de ce compte."],
+  ["#zone-commentaires", "Commentaires que cet élève a le droit de lire."],
+  ["#audit-data", "JSON du relevé personnel, rendu par le serveur."]
+], [
+  "audit_perso.js lit audit-data et dessine les barres, les fiches et les commentaires.",
+  "Actualiser redemande le relevé du même compte, sans identifiant dans l'adresse."
+]);
+
+preciser("templates/audit.html", "Audit du propriétaire", [
+  ["#etat-site", "Phrase qui dit si le site est ouvert ou suspendu."],
+  ["#bouton-site", "Dans le menu Pilotage. Suspendre ou rouvrir le site."],
+  ["#bouton-actualiser", "Dans le même menu. Redemande le relevé."],
+  ["[data-onglet]", "Cinq onglets : vue, sessions, contenu, etoiles, securite. Un seul a aria-selected vrai."],
+  ["#onglet-vue", "Visible au chargement. Contient #graphiques."],
+  ["#onglet-sessions", "Caché. Contient #zone-sessions."],
+  ["#onglet-contenu", "Caché. Stockage, comptes, activité, contenu, orphelins."],
+  ["#onglet-etoiles", "Caché. #zone-etoile-globale et #zone-etoiles-matiere."],
+  ["#onglet-securite", "Caché. Identifiants bloqués et comptes suspendus."],
+  ["#audit-data", "JSON du relevé de tout le site."]
+], [
+  "graphiques.js puis audit.js sont chargés.",
+  "audit.js peint la vue d'ensemble : anneau des rôles, barres de disque, matières et étoiles.",
+  "Un clic d'onglet cache les autres panneaux et montre celui qui correspond à data-onglet.",
+  "La page se rafraîchit toute seule pour les sessions."
+]);
+
+preciser("templates/staff_dashboard.html", "Espace modération ou administration", [
+  ["titre", "« Espace administration » ou « Espace modération », selon la route."],
+  ["comptes_url", "Lien du menu vers la page des comptes de ce rôle."],
+  ["#form-recherche", "Texte, auteur, étoiles minimum. Pas de matière, classe ni spécialité."],
+  ["#resultats", "Cartes trouvées par la recherche."],
+  ["#selecteur", "Menu de cours."],
+  ["#fichiers", "Fiches du cours, avec Modifier et Supprimer."],
+  ["#staff-config", "Attribut data-prefix : /admin ou /moderator. Caché."]
+], [
+  "staff.js lit data-prefix.",
+  "Il charge les fiches du cours et pose les liens de modification sous ce préfixe.",
+  "La recherche remplit #resultats sans changer le cours affiché en dessous."
+]);
+
+preciser("templates/comptes.html", "Gestion des comptes", [
+  ["prefix", "Début des adresses d'action : /admin ou /moderator."],
+  ["form-recherche.q", "Nom, prénom ou identifiant, 80 caractères."],
+  ["form-recherche.role", "Vide, user, moderator, admin ou owner."],
+  ["form-recherche.etat", "Vide, actif ou suspendu."],
+  ["#bouton-tous", "Efface les critères et réaffiche la liste initiale."],
+  ["#corps-comptes", "Corps du tableau, vide dans le HTML."],
+  ["#comptes-config", "data-prefix, data-roles (1 ou 0), data-moi (identifiant du compte connecté)."],
+  ["#comptes-data", "JSON des profils, sans mot de passe."]
+], [
+  "comptes.js lit la configuration et le JSON.",
+  "Il dessine une ligne par compte : nom, identifiant, rôle, état, actions.",
+  "La recherche remplace le tableau. Tout afficher revient à la liste d'origine."
+]);
+
+preciser("templates/modifier.html", "Modifier une fiche", [
+  ["metadata.author", "Identifiant de l'auteur, affiché, non modifiable."],
+  ["#form-modifier", "data-save-url pour l'enregistrement, data-retour-url pour Annuler et pour le succès."],
+  ["#selecteur", "Cours actuel, prérempli."],
+  ["name=title", "Titre, obligatoire, 120 caractères, valeur déjà remplie."],
+  ["name=desc", "Description, obligatoire, 2000 caractères."],
+  ["name=file", "Fichier facultatif. Les mêmes extensions que la publication, sans HTML."],
+  ["metadata.original_filename", "Nom du fichier actuel, montré sous le champ."],
+  ["#fiche-data", "JSON public de la fiche, lu par modifier.js."]
+], [
+  "modifier.js préremplit le sélecteur avec la matière, la classe et la spécialité.",
+  "Enregistrer envoie le formulaire vers data-save-url.",
+  "Succès : le navigateur va vers data-retour-url. Annuler y va sans enregistrer."
+]);
+
+preciser("templates/erreur.html", "Page d'erreur", [
+  ["message", "Texte fourni par le serveur, échappé. Jamais interprété comme du HTML."]
+], [
+  "La page affiche le titre Oups, le message, puis un lien vers /accueil."
+]);
+
+preciser("templates/suspendu.html", "Site suspendu", [
+  ["depuis", "Date de la pause, affichée seulement si le serveur la connaît."]
+], [
+  "La page explique la pause.",
+  "Si depuis est rempli, une note donne la date.",
+  "Le lien Connexion mène à /auth/login-page. Le propriétaire peut encore entrer."
+]);
+
+preciser("auth/login/login.html", "Connexion", [
+  ["site_suspendu", "Si vrai, une phrase d'erreur dit que seul le propriétaire peut entrer."],
+  ["name=username", "Identifiant, obligatoire, 80 caractères, autocomplete username."],
+  ["name=password", "Mot de passe, obligatoire, 200 caractères, autocomplete current-password."],
+  ["#login-config", "JSON { next }. Chemin interne déjà nettoyé par le serveur."]
+], [
+  "login.js lit next.",
+  "Entrer envoie un JSON à /auth/login, pas le formulaire HTML classique.",
+  "Si le compte doit changer de mot de passe, la page part vers /auth/mot-de-passe.",
+  "Sinon elle suit next, ou la page d'accueil du rôle."
+]);
+
+preciser("auth/logout/logout.html", "Déconnexion", [
+  ["user.name", "Prénom dans la phrase d'au revoir."],
+  ["user.surname", "Nom à côté."],
+  ["#form-sortie", "Un seul bouton. logout.js intercepte l'envoi."],
+  ["retour", "Adresse « Rester connecté », page d'accueil du rôle."]
+], [
+  "Le clic poste /auth/logout avec le jeton CSRF.",
+  "Succès : redirection vers /accueil.",
+  "Rester connecté quitte la page sans appeler la déconnexion."
+]);
+
+preciser("auth/mot-de-passe/mot-de-passe.html", "Mot de passe", [
+  ["obligatoire", "Vrai à la première connexion. Change le titre et le lien du bas."],
+  ["name=actuel", "Mot de passe courant, 200 caractères."],
+  ["name=nouveau", "Nouveau mot de passe, 10 à 200 caractères."],
+  ["name=confirmation", "Deuxième saisie, mêmes bornes."],
+  ["retour", "Page d'accueil du rôle, utilisée seulement si le changement n'est pas forcé."],
+  ["#mot-de-passe-config", "JSON { obligatoire, retour }."]
+], [
+  "Si obligatoire, le titre est « Choisis ton mot de passe » et le lien du bas est la déconnexion.",
+  "Sinon le titre est « Modifier mon mot de passe » et le lien ramène à l'espace.",
+  "Enregistrer envoie actuel, nouveau et confirmation en JSON vers /auth/mot-de-passe."
+]);
+
+preciser("templates/legal/mentions.html", "Mentions légales", [
+  ["h1", "Mentions légales."],
+  ["Éditeur", "Le compte dont le rôle est owner. Un seul."],
+  ["Hébergement", "La machine du serveur. Dossiers matiere/ et uploads/, base SQLite locale."],
+  ["Contact", "Hors du site : le site n'envoie pas d'e-mail."],
+  ["Contenu publié", "L'auteur affiché est l'identifiant du compte qui a déposé la fiche."]
+], [
+  "La page s'affiche sans script et sans lecture de la base.",
+  "Elle reste ouverte même si le site est suspendu ou si un mot de passe doit être changé."
+]);
+
+preciser("templates/legal/confidentialite.html", "Politique de confidentialité", [
+  ["Compte", "Prénom, nom, identifiant, rôle, suspension, date de création, hash du mot de passe."],
+  ["Fiches", "Fichier, titre, description, cours, nom d'origine. Suppression en cascade des étoiles et commentaires."],
+  ["Activité", "Identifiants envoyés et téléchargés, étoiles, commentaires et leur visibilité."],
+  ["Session", "Identifiant du compte, dates, nom court du navigateur. Pas d'adresse IP. Huit heures."],
+  ["Durée", "Tant que le compte et les fiches existent. La déconnexion ferme la session."]
+], [
+  "La page décrit seulement ce que le programme enregistre vraiment.",
+  "Elle ne charge aucun script."
+]);
+
+preciser("templates/legal/cookies.html", "Gestion des cookies", [
+  ["Cookie de session", "HttpOnly, déposé à la connexion, lu seulement par le serveur, huit heures."],
+  ["Cookie CSRF", "Déposé en même temps. Le script l'envoie avec les actions qui modifient des données."],
+  ["fiches-cookies", "Clé du stockage local. Valeur compris après « J'ai compris ». Ce n'est pas un cookie."],
+  ["#cookies-oublier", "Bouton « Revoir le bandeau ». cookies.js retire la clé."]
+], [
+  "La page liste les deux cookies et explique le stockage local.",
+  "Revoir le bandeau efface fiches-cookies. Au prochain affichage, common.js remontrera le bandeau."
+]);
+
+preciser("templates/legal/licences.html", "Licences", [
+  ["Flask, Werkzeug, Flask-SQLAlchemy", "BSD à trois clauses."],
+  ["SQLAlchemy, Flask-JWT-Extended, Gunicorn", "MIT."],
+  ["Requests", "Apache 2.0."],
+  ["Fiches des élèves", "Restent la propriété de leurs auteurs. Elles ne sont pas couvertes par ces licences."]
+], [
+  "La page nomme les bibliothèques et leur licence.",
+  "Les textes complets sont ceux livrés avec chaque paquet Python sur le serveur."
+]);
+
+preciser("documentation/index.html", "Page de cette documentation", [
+  ["#recherche", "Champ de recherche. Il ne quitte pas la page."],
+  ["#filtres", "Pastilles de langage, remplies par menu.js."],
+  ["#menu", "Sommaire : langage, fichier, nom."],
+  ["#lecture", "Résumé, variables, actions à gauche. Code à droite, moitié moitié."],
+  ["donnees-*.js", "Textes des fiches. Chargés par des balises script, sans fetch."],
+  ["precisions.js", "Variables et actions des fonctions."],
+  ["sources.js", "Extraits de code affichés à droite."],
+  ["coloration.js", "Couleurs du thème sombre, appliquées au code."],
+  ["menu.js", "Filtre, recherche, et mise en page de la fiche."]
+], [
+  "Ouvrir le fichier dans le navigateur. Aucun serveur n'est contacté.",
+  "menu.js construit les pastilles et le sommaire à partir de window.DOCS.",
+  "Un clic de fiche pose le texte à gauche et le code coloré à droite, chacun sur la moitié."
+]);
+
 preciser("static/style.css", "petit écran", [
   ["max-width", "700px."],
   [".barre", "flex-direction column, align-items flex-start."],
