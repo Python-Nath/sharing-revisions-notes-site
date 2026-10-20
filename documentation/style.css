@@ -110,9 +110,9 @@ h1, h2, h3 { font-family: Georgia, Palatino, serif; line-height: 1.2; }
 
 .cadre {
   display: grid;
-  grid-template-columns: minmax(16rem, 22rem) 1fr;
+  grid-template-columns: minmax(15rem, 20rem) 1fr;
   gap: 1rem;
-  width: min(1180px, calc(100% - 2rem));
+  width: min(1440px, calc(100% - 2rem));
   margin: 0 auto 2rem;
 }
 
@@ -236,6 +236,46 @@ table.variables th {
   font-weight: 700;
 }
 
+.visavis {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  margin-top: 0.6rem;
+}
+
+.colonne-code { position: sticky; top: 7.2rem; }
+
+pre.code {
+  margin: 0;
+  max-height: calc(100vh - 9rem);
+  overflow: auto;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 0;
+  padding: 0.85rem 1rem;
+  font-family: Consolas, "Cascadia Mono", "Cascadia Code", monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre;
+}
+
+/* Thème sombre VS Code (Dark+). */
+.tok-mot { color: #569cd6; }
+.tok-ctrl { color: #c586c0; }
+.tok-lang { color: #569cd6; }
+.tok-str { color: #ce9178; }
+.tok-com { color: #6a9955; }
+.tok-num { color: #b5cea8; }
+.tok-fn { color: #dcdcaa; }
+.tok-cls { color: #4ec9b0; }
+.tok-var { color: #9cdcfe; }
+.tok-balise { color: #569cd6; }
+.tok-attr { color: #9cdcfe; }
+.tok-prop { color: #9cdcfe; }
+.tok-sel { color: #d7ba7d; }
+.tok-ponc { color: #808080; }
+
 .compte {
   margin: 0 0 0.5rem;
   color: var(--douce);
@@ -246,8 +286,9 @@ table.variables th {
 
 [hidden] { display: none !important; }
 
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
   .entete { flex-direction: column; align-items: stretch; position: static; }
-  .cadre { grid-template-columns: 1fr; }
-  .menu { position: static; max-height: none; }
+  .cadre, .visavis { grid-template-columns: 1fr; }
+  .menu, .colonne-code { position: static; max-height: none; }
+  pre.code { max-height: 28rem; }
 }

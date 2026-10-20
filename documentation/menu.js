@@ -45,6 +45,11 @@
     return normaliser(sac).indexOf(aiguille) !== -1;
   }
 
+  function sourceDe(entree) {
+    var table = window.SOURCES || {};
+    return table[entree.fichier + "\n" + entree.nom] || null;
+  }
+
   function precisionDe(entree) {
     var table = window.PRECISIONS || {};
     return table[entree.fichier + "\n" + entree.nom] || { variables: [], actions: [] };
@@ -121,14 +126,34 @@
     var detail = document.createElement("p");
     detail.className = "detail";
     detail.textContent = entree.detail;
-    lecture.append(badges, titre, chemin, signature, resume, detail);
+    var visavis = document.createElement("div");
+    visavis.className = "visavis";
+    var gauche = document.createElement("div");
+    gauche.className = "colonne-texte";
+    gauche.append(resume, detail);
     var precision = precisionDe(entree);
     if (precision.variables.length) {
-      lecture.append(titreSection("Variables"), tableauVariables(precision.variables));
+      gauche.append(titreSection("Variables"), tableauVariables(precision.variables));
     }
     if (precision.actions.length) {
-      lecture.append(titreSection("Actions, dans l'ordre"), listeActions(precision.actions));
+      gauche.append(titreSection("Actions, dans l'ordre"), listeActions(precision.actions));
     }
+    var droite = document.createElement("div");
+    droite.className = "colonne-code";
+    var src = sourceDe(entree);
+    if (src && src.code) {
+      var legende = document.createElement("p");
+      legende.className = "chemin";
+      legende.textContent = src.fichier;
+      droite.append(legende, colorier(src.code, src.langage || entree.langue));
+    } else {
+      var absent = document.createElement("p");
+      absent.className = "chemin";
+      absent.textContent = "Pas de code source pour cette fiche.";
+      droite.append(absent);
+    }
+    visavis.append(gauche, droite);
+    lecture.append(badges, titre, chemin, signature, visavis);
     if (location.hash !== "#" + entree.id) {
       history.replaceState(null, "", "#" + entree.id);
     }
