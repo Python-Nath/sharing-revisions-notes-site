@@ -78,6 +78,7 @@ def creer_compte(username, role):
         download_metadatas={},
         uploaded_files=[],
         uploaded_metadatas={},
+        must_change_password=False,
     )
     db.session.add(compte)
     db.session.commit()
@@ -382,6 +383,74 @@ def verifier_social(client_owner):
         verifier(variable in script_install, f"{variable} absent du script d'installation")
 
 
+def verifier_mot_de_passe():
+    """Première connexion bloquée tant que le mot de passe n'est pas choisi, puis changement libre."""
+    with app.app_context():
+        compte = creer_compte("nouveau", "user")
+        compte.must_change_password = True
+        db.session.commit()
+
+    client = app.test_client()
+    entree = client.post("/auth/login", json={"username": "nouveau", "password": "MotDePasse-Test-9"})
+    verifier(entree.status_code == 200, entree.get_json())
+    verifier(entree.get_json()["must_change_password"] is True, entree.get_json())
+    verifier(entree.get_json()["home"] == "/auth/mot-de-passe", entree.get_json())
+    entete = csrf(client)
+
+    ferme = client.get("/users/dashboard", headers={"Accept": "text/html"})
+    verifier(ferme.status_code == 302 and ferme.location.endswith("/auth/mot-de-passe"), ferme.location)
+    verifier(client.get("/info/matiere").status_code == 403, "les fiches restent ouvertes avant le nouveau mot de passe")
+
+    page = client.get("/auth/mot-de-passe")
+    verifier(page.status_code == 200 and "première connexion" in page.get_data(as_text=True), "formulaire de premier mot de passe absent")
+
+    sans_csrf = client.post(
+        "/auth/mot-de-passe",
+        json={"actuel": "MotDePasse-Test-9", "nouveau": "Nouveau-Mot-2026", "confirmation": "Nouveau-Mot-2026"},
+        headers={"Accept": "application/json"},
+    )
+    verifier(sans_csrf.status_code == 401, "le changement sans CSRF a été accepté")
+
+    court = client.post(
+        "/auth/mot-de-passe",
+        json={"actuel": "MotDePasse-Test-9", "nouveau": "court", "confirmation": "court"},
+        headers=entete,
+    )
+    verifier(court.status_code == 400, court.get_json())
+    different = client.post(
+        "/auth/mot-de-passe",
+        json={"actuel": "MotDePasse-Test-9", "nouveau": "Nouveau-Mot-2026", "confirmation": "Autre-Chose-9"},
+        headers=entete,
+    )
+    verifier(different.status_code == 400, different.get_json())
+    mauvais = client.post(
+        "/auth/mot-de-passe",
+        json={"actuel": "pas-le-bon", "nouveau": "Nouveau-Mot-2026", "confirmation": "Nouveau-Mot-2026"},
+        headers=entete,
+    )
+    verifier(mauvais.status_code == 401, mauvais.get_json())
+    ok = client.post(
+        "/auth/mot-de-passe",
+        json={"actuel": "MotDePasse-Test-9", "nouveau": "Nouveau-Mot-2026", "confirmation": "Nouveau-Mot-2026"},
+        headers=entete,
+    )
+    verifier(ok.status_code == 200 and ok.get_json()["must_change_password"] is False, ok.get_json())
+    verifier(client.get("/info/matiere").status_code == 200, "le site reste fermé après le changement")
+
+    volontaire = client.get("/auth/mot-de-passe")
+    verifier("quand tu veux" in volontaire.get_data(as_text=True), "le changement volontaire manque")
+    encore = client.post(
+        "/auth/mot-de-passe",
+        json={"actuel": "Nouveau-Mot-2026", "nouveau": "Autre-Mot-2026!", "confirmation": "Autre-Mot-2026!"},
+        headers=entete,
+    )
+    verifier(encore.status_code == 200, encore.get_json())
+    client.post("/auth/logout", headers=entete)
+    retour = client.post("/auth/login", json={"username": "nouveau", "password": "Autre-Mot-2026!"})
+    verifier(retour.status_code == 200 and retour.get_json()["must_change_password"] is False, retour.get_json())
+    verifier(retour.get_json()["home"] == "/users/dashboard", retour.get_json())
+
+
 def scenario():
     client = app.test_client()
 
@@ -630,6 +699,8 @@ def scenario():
         "une session fermée est encore listée",
     )
     client.post("/auth/logout", headers=entete_owner)
+
+    verifier_mot_de_passe()
 
     _ATTEMPTS.clear()
     os.environ["LOGIN_MAX_ATTEMPTS"] = "2"

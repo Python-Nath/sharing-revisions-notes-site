@@ -86,8 +86,11 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        _un_seul_proprietaire()
+        # Les colonnes nouvelles d'abord : la requête des propriétaires
+        # lit toute la ligne, y compris must_change_password.
+        _colonne_mot_de_passe()
         _colonne_commentaire_corrigee()
+        _un_seul_proprietaire()
 
     @jwt.token_in_blocklist_loader
     def token_revoked(_header, payload):
@@ -105,6 +108,13 @@ def create_app():
         from utils.site_gate import bloquer_si_suspendu
 
         return bloquer_si_suspendu()
+
+    @app.before_request
+    def mot_de_passe_a_choisir():
+        """À la première connexion, rien d'autre n'est ouvert que le choix du mot de passe."""
+        from utils.access import forcer_mot_de_passe
+
+        return forcer_mot_de_passe()
 
     @jwt.unauthorized_loader
     def missing_token(reason):
@@ -243,7 +253,10 @@ def _un_seul_proprietaire():
     """Garde le propriétaire le plus ancien et interdit d'en créer un second.
 
     L'index n'existe que pour SQLite, la base utilisée par le site.
+    La colonne du mot de passe est posée avant la lecture : une base
+    ancienne n'a pas encore must_change_password, et la requête la demande.
     """
+    _colonne_mot_de_passe()
     proprietaires = (
         User.query.filter_by(role="owner")
         .order_by(User.created_at.asc(), User.id.asc())
@@ -271,6 +284,23 @@ def _colonne_commentaire_corrigee():
         return
     db.session.execute(text(
         "ALTER TABLE comments ADD COLUMN corrected BOOLEAN NOT NULL DEFAULT 0"
+    ))
+    db.session.commit()
+
+
+def _colonne_mot_de_passe():
+    """Ajoute le drapeau de premier mot de passe aux bases déjà créées.
+
+    Les comptes déjà là ne sont pas forcés : ils ont déjà un mot de passe en usage.
+    Les nouveaux comptes, eux, doivent le changer à la première connexion.
+    """
+    if db.engine.url.get_backend_name() != "sqlite":
+        return
+    lignes = db.session.execute(text("PRAGMA table_info(users)")).all()
+    if not lignes or any(ligne[1] == "must_change_password" for ligne in lignes):
+        return
+    db.session.execute(text(
+        "ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT 0"
     ))
     db.session.commit()
 

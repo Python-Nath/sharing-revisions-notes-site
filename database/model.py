@@ -32,6 +32,8 @@ class User(db.Model):
     # Un index unique empêche d'enregistrer deux propriétaires.
     role = db.Column(db.String(20), nullable=False, default="user")
     is_ban = db.Column(db.Boolean, nullable=False, default=False)
+    # Vrai tant que le compte n'a pas choisi son mot de passe lui-même.
+    must_change_password = db.Column(db.Boolean, nullable=False, default=True)
     # Listes JSON : SQLAlchemy appelle list() et dict() pour chaque nouvelle ligne.
     download_ids = db.Column(db.JSON, nullable=True, default=list)
     download_metadatas = db.Column(db.JSON, nullable=True, default=dict)

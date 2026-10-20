@@ -6,6 +6,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   document.addEventListener("compte-connu", function (event) {
     if (!event.detail) return;
+    if (event.detail.must_change_password) {
+      window.location.assign("/auth/mot-de-passe");
+      return;
+    }
     const suivant = config.next && config.next !== "/accueil"
       ? config.next
       : lienEspace(event.detail.role);
@@ -26,6 +30,10 @@ document.addEventListener("DOMContentLoaded", function () {
       bouton.disabled = false;
       if (!reponse.ok) {
         afficherStatut("statut", reponse.data.error || "Connexion impossible", "erreur");
+        return;
+      }
+      if (reponse.data.must_change_password) {
+        window.location.assign("/auth/mot-de-passe");
         return;
       }
       if (config.next && config.next !== "/accueil" && config.next !== "/auth/login-page") {

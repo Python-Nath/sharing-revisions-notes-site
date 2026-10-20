@@ -81,6 +81,7 @@ def assurer_compte(compte):
             download_metadatas={},
             uploaded_files=[],
             uploaded_metadatas={},
+            must_change_password=True,
         )
         db.session.add(utilisateur)
     else:
@@ -89,6 +90,7 @@ def assurer_compte(compte):
         utilisateur.password = generate_password_hash(compte["password"])
         utilisateur.role = compte["role"]
         utilisateur.is_ban = False
+        utilisateur.must_change_password = True
     return "créé" if cree else "mis à jour"
 
 

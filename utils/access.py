@@ -4,12 +4,41 @@ Le rôle est toujours relu dans la base. Il n'est pas copié dans le jeton,
 donc un changement de rôle ou un ban s'applique tout de suite.
 """
 
-from flask import jsonify, redirect
+from flask import jsonify, redirect, request
 from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 
 from database.model import User, db
 from utils.http import error_response, wants_html
 from utils.security import is_uuid
+
+
+_PAGES_MOT_DE_PASSE = {
+    "auth.mot_de_passe_page",
+    "auth.changer_mot_de_passe",
+    "auth.logout",
+    "auth.logout_page",
+    "auth.me",
+    "auth.login",
+    "auth.login_page",
+    "static",
+    "auth.static",
+}
+
+
+def forcer_mot_de_passe():
+    """Tant que le compte n'a pas choisi son mot de passe, le reste du site est fermé."""
+    try:
+        verify_jwt_in_request(optional=True)
+    except Exception:
+        return None
+    user = load_current_user()
+    if user is None or user.is_ban or not user.must_change_password:
+        return None
+    if request.endpoint in _PAGES_MOT_DE_PASSE or request.path.startswith(("/static/", "/auth/static/")):
+        return None
+    if wants_html():
+        return redirect("/auth/mot-de-passe")
+    return jsonify({"error": "Choisis un nouveau mot de passe pour continuer."}), 403
 
 
 def home_for_role(role):

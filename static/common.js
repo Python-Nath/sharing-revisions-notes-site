@@ -658,14 +658,23 @@ function remplirNavigation() {
       lien.href = "/auth/login-page";
       lien.textContent = "Connexion";
       zone.append(lien);
+    } else if (compte.must_change_password && window.location.pathname !== "/auth/mot-de-passe") {
+      window.location.assign("/auth/mot-de-passe");
+      return;
     } else {
-      const espace = document.createElement("a");
-      espace.href = lienEspace(compte.role);
-      espace.textContent = "Mon espace";
       const sortie = document.createElement("a");
       sortie.href = "/auth/logout-page";
       sortie.textContent = "Déconnexion";
-      zone.append(espace, sortie);
+      if (!compte.must_change_password) {
+        const espace = document.createElement("a");
+        espace.href = lienEspace(compte.role);
+        espace.textContent = "Mon espace";
+        const motDePasse = document.createElement("a");
+        motDePasse.href = "/auth/mot-de-passe";
+        motDePasse.textContent = "Mot de passe";
+        zone.append(espace, motDePasse);
+      }
+      zone.append(sortie);
       const salut = document.getElementById("salut");
       if (salut) salut.textContent = "Bonjour " + compte.name + " " + compte.surname + ".";
     }

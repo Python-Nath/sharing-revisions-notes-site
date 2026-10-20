@@ -240,8 +240,16 @@ EOF
     2)
         # Pas d'écriture d'environnement : app.py utilise ses défauts
         # (SQLite locale, cookie aussi en HTTP, 8 tentatives, état dans instance/).
+        # La commande « python » n'existe pas sur toutes les machines : on prend
+        # d'abord l'interpréteur du venv, qui a Flask, sinon python, sinon python3.
         echo "Lancement de l'application..."
-        python app.py
+        if [ -x ./venv/bin/python ]; then
+            exec ./venv/bin/python app.py
+        elif command -v python >/dev/null 2>&1; then
+            exec python app.py
+        else
+            exec python3 app.py
+        fi
         ;;
 
     *)

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titre %}Mot de passe — Fiches de révision{% endblock %}
+{% block contenu %}
+  <section class="panneau etroit">
+    {% if obligatoire %}
+      <h1>Choisis ton mot de passe</h1>
+      <p>C'est ta première connexion. Le mot de passe reçu au départ doit être remplacé avant d'ouvrir les fiches.</p>
+    {% else %}
+      <h1>Modifier mon mot de passe</h1>
+      <p>Tu peux le changer quand tu veux. L'ancien est demandé pour confirmer que c'est bien toi.</p>
+    {% endif %}
+    <form id="form-mot-de-passe">
+      <label class="champ">Mot de passe actuel
+        <input type="password" name="actuel" required maxlength="200" autocomplete="current-password" autofocus>
+      </label>
+      <label class="champ">Nouveau mot de passe
+        <input type="password" name="nouveau" required minlength="10" maxlength="200" autocomplete="new-password">
+      </label>
+      <label class="champ">Confirmer le nouveau
+        <input type="password" name="confirmation" required minlength="10" maxlength="200" autocomplete="new-password">
+      </label>
+      <p class="note">Au moins 10 caractères, différent de l'actuel et de ton identifiant.</p>
+      <button class="bouton" type="submit">Enregistrer</button>
+    </form>
+    <p id="statut" class="statut" role="status"></p>
+    {% if obligatoire %}
+      <p><a href="/auth/logout-page">Se déconnecter</a></p>
+    {% else %}
+      <p><a href="{{ retour }}">Retour à mon espace</a></p>
+    {% endif %}
+  </section>
+  <script id="mot-de-passe-config" type="application/json">{{ {"obligatoire": obligatoire, "retour": retour}|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('auth.static', filename='mot-de-passe.js') }}"></script>
+{% endblock %}

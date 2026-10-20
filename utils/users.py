@@ -12,6 +12,7 @@ def public_profile(user, include_status=False):
         "surname": user.surname,
         "username": user.username,
         "role": user.role,
+        "must_change_password": bool(user.must_change_password),
     }
     if include_status:
         profile["is_ban"] = bool(user.is_ban)

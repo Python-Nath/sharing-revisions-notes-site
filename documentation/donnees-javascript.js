@@ -1,0 +1,257 @@
+/* Fonctions JavaScript. Le navigateur ne contacte pas Flask depuis cette documentation. */
+
+ajouter("javascript", "static/common.js", "fonction", "lireCookie", "lireCookie(nom)",
+  "Lit un cookie que le JavaScript a le droit de voir.",
+  "Le cookie de session est HttpOnly : ce script ne peut pas le lire. Il lit seulement csrf_access_token, exigé pour publier, supprimer, étoiler ou commenter.");
+
+ajouter("javascript", "static/common.js", "fonction", "api", "api(chemin, options)",
+  "Envoie une requête au site et ramène du JSON.",
+  "Ajoute le jeton CSRF pour toute méthode autre que GET. Accepte un corps JSON ou un formulaire. En cas de réponse illisible ou de coupure, renvoie un objet d'erreur plutôt que de planter la page.");
+
+ajouter("javascript", "static/common.js", "fonction", "afficherStatut", "afficherStatut(id, message, type)",
+  "Écrit un message dans une zone de la page.",
+  "type vaut ok ou erreur. Le texte passe par textContent, jamais par du HTML injecté.");
+
+ajouter("javascript", "static/common.js", "fonction", "lienEspace", "lienEspace(rôle)",
+  "Adresse de l'espace personnel.",
+  "Propriétaire vers l'audit du site, admin et modérateur vers leur tableau, élève vers le sien.");
+
+ajouter("javascript", "static/common.js", "fonction", "libelleRole", "libelleRole(rôle)",
+  "Nom français du rôle.",
+  "Propriétaire, Administrateur, Modérateur, ou Élève.");
+
+ajouter("javascript", "static/common.js", "fonction", "lireJson", "lireJson(id)",
+  "Lit un bloc JSON déposé dans la page par le serveur.",
+  "Retourne null si la balise manque ou si le JSON est cassé. Sert aux tableaux de bord et aux audits.");
+
+ajouter("javascript", "static/common.js", "fonction", "libelleAudience", "libelleAudience(visibilité)",
+  "Traduit le code de visibilité d'un commentaire.",
+  "auteur : pour tous les utilisateurs. equipe : pour l'équipe. les_deux : pour les utilisateurs et l'équipe.");
+
+ajouter("javascript", "static/common.js", "fonction", "libelleStatutCommentaire", "libelleStatutCommentaire(commentaire)",
+  "Décrit l'état d'un commentaire.",
+  "En attente, pris en charge par quelqu'un, ou validé. Le nom affiché est l'identifiant du responsable, pas un numéro interne.");
+
+ajouter("javascript", "static/common.js", "fonction", "messageLocal", "messageLocal(zone, texte, type)",
+  "Message d'erreur ou de succès dans un panneau de commentaires.",
+  "Chaque fiche a le sien, pour ne pas mélanger les messages de deux cartes.");
+
+ajouter("javascript", "static/common.js", "fonction", "allerConnexion", "allerConnexion()",
+  "Envoie vers la page de connexion.",
+  "Le retour prévu est la page actuelle. Le serveur revérifie que ce retour reste sur le site.");
+
+ajouter("javascript", "static/common.js", "fonction", "boutonEtoile", "boutonEtoile(fiche)",
+  "Bouton qui pose ou retire une étoile.",
+  "Le libellé montre le total. Une étoile pleine veut dire que ce compte l'a posée. Sans session, le clic mène à la connexion.");
+
+ajouter("javascript", "static/common.js", "fonction", "libelle", "libelle(nombre, actif)  — dans boutonEtoile",
+  "Met à jour le texte et l'état du bouton étoile.",
+  "aria-pressed dit aux lecteurs d'écran si l'étoile est posée.");
+
+ajouter("javascript", "static/common.js", "fonction", "dessinerCommentaires", "dessinerCommentaires(fiche, panneau)",
+  "Affiche les commentaires visibles et le formulaire.",
+  "Le formulaire propose trois publics : tous les utilisateurs, seulement l'équipe, ou les deux. Les boutons Suivre, Valider et Retirer n'apparaissent que si le serveur a dit que ce compte en a le droit.");
+
+ajouter("javascript", "static/common.js", "fonction", "zoneCommentaires", "zoneCommentaires(fiche)",
+  "Bloc replié « Commentaires ».",
+  "La liste est demandée au serveur seulement quand on ouvre le bloc, puis à chaque réouverture pour voir les nouveautés.");
+
+ajouter("javascript", "static/common.js", "fonction", "carteFiche", "carteFiche(fiche, actions)",
+  "Construit la carte d'une fiche.",
+  "Titre, auteur, cours, description, nom du fichier, étoile, boutons d'action, commentaires. Tout le texte visible est posé avec textContent.");
+
+ajouter("javascript", "static/common.js", "fonction", "supprimerFiche", "supprimerFiche(adresse)",
+  "Demande confirmation puis supprime la fiche.",
+  "Si le serveur accepte, la page entière se recharge. Ainsi le lien de téléchargement, y compris dans l'historique, disparaît avec le fichier.");
+
+ajouter("javascript", "static/common.js", "fonction", "monterRechercheFiches", "monterRechercheFiches(formulaire, zone, actions)",
+  "Branche le formulaire de recherche de fiches.",
+  "Envoie le texte, l'auteur et le minimum d'étoiles. Les champs vides ne partent pas. Au-delà de 80 fiches, une note demande d'affiner.");
+
+ajouter("javascript", "static/common.js", "fonction", "monterSelecteur", "monterSelecteur(racine, options)",
+  "Construit les trois listes matière, classe, spécialité.",
+  "Elles parlent à /info/matiere, /info/classe et /info/specialite. Le dernier choix complet est gardé dans sessionStorage pour le retrouver au prochain affichage.");
+
+ajouter("javascript", "static/common.js", "fonction", "creerSelect", "creerSelect(étiquette)  — dans monterSelecteur",
+  "Ajoute une liste déroulante avec son étiquette.",
+  "L'étiquette et la liste sont liées, pour le clavier et les lecteurs d'écran.");
+
+ajouter("javascript", "static/common.js", "fonction", "vider", "vider(liste, libellé)  — dans monterSelecteur",
+  "Remet une liste à son invite.",
+  "La première option vide signifie « pas encore choisi ».");
+
+ajouter("javascript", "static/common.js", "fonction", "remplir", "remplir(liste, noms, libellé)  — dans monterSelecteur",
+  "Remplit une liste avec les noms renvoyés par le serveur.",
+  "Chaque nom devient une option. Rien n'est interprété comme du HTML.");
+
+ajouter("javascript", "static/common.js", "fonction", "valeurUnique", "valeurUnique(liste)  — dans monterSelecteur",
+  "Choisit tout seul l'unique vrai choix.",
+  "S'il n'y a qu'une matière, une classe ou une spécialité, l'élève n'a pas à cliquer pour rien.");
+
+ajouter("javascript", "static/common.js", "fonction", "choixComplet", "choixComplet()  — dans monterSelecteur",
+  "Retourne le cours si les trois listes sont remplies.",
+  "Sinon null. Les fiches ne se chargent pas sur un cours incomplet.");
+
+ajouter("javascript", "static/common.js", "fonction", "notifier", "notifier()  — dans monterSelecteur",
+  "Prévient la page que le cours a changé.",
+  "Mémorise le trio complet et appelle onChange.");
+
+ajouter("javascript", "static/common.js", "fonction", "chargerSpecialites", "chargerSpecialites()  — dans monterSelecteur",
+  "Charge les spécialités de la classe choisie.",
+  "Désactive la liste tant que la réponse n'est pas arrivée.");
+
+ajouter("javascript", "static/common.js", "fonction", "chargerClasses", "chargerClasses()  — dans monterSelecteur",
+  "Charge les classes de la matière choisie.",
+  "Changer de matière remet la spécialité à zéro.");
+
+ajouter("javascript", "static/common.js", "fonction", "demarrer", "demarrer()  — dans monterSelecteur",
+  "Charge les matières au premier affichage.",
+  "Reprend le cours mémorisé s'il existe encore.");
+
+ajouter("javascript", "static/common.js", "fonction", "remplirNavigation", "remplirNavigation()",
+  "Construit le menu du haut selon la session.",
+  "Sans compte : lien Connexion. Si le mot de passe doit encore être choisi, la page part vers /auth/mot-de-passe et le menu ne propose que la déconnexion. Sinon : Mon espace, Mot de passe et Déconnexion. Annonce ensuite l'événement compte-connu.");
+
+ajouter("javascript", "static/accueil.js", "fonction", "afficherZones", "afficherZones()",
+  "Montre le formulaire d'envoi ou l'invite à se connecter.",
+  "Le formulaire n'apparaît que si un cours est choisi et qu'un compte est connecté.");
+
+ajouter("javascript", "static/accueil.js", "fonction", "cheminCours", "cheminCours()",
+  "Adresse des fiches du cours choisi.",
+  "Les trois noms sont encodés pour rester des morceaux d'adresse sûrs.");
+
+ajouter("javascript", "static/accueil.js", "fonction", "chargerFiches", "chargerFiches()",
+  "Affiche les fiches du cours dès qu'il est choisi.",
+  "Pas de bouton intermédiaire. Chaque fiche devient une carte avec étoile et commentaires.");
+
+ajouter("javascript", "static/espace.js", "fonction", "remplir", "remplir(zone, fiches, avec actions)",
+  "Affiche les envois ou les téléchargements de l'élève.",
+  "Les actions Modifier et Supprimer ne sont mises que sur les envois. Supprimer recharge la page.");
+
+ajouter("javascript", "static/staff.js", "fonction", "charger", "charger()",
+  "Affiche les fiches du cours choisi dans l'espace équipe.",
+  "Ajoute Modifier et Supprimer. Le préfixe /admin ou /moderator vient de la page, donc les deux rôles partagent ce script.");
+
+ajouter("javascript", "static/comptes.js", "fonction", "dessiner", "dessiner(liste)",
+  "Remplace le tableau des comptes.",
+  "Utilisé au chargement, après une recherche, et pour le bouton Tout afficher.");
+
+ajouter("javascript", "static/comptes.js", "fonction", "cellule", "cellule(texte)",
+  "Crée une case de tableau.",
+  "Le texte n'est pas interprété comme du HTML.");
+
+ajouter("javascript", "static/comptes.js", "fonction", "ajouterLigne", "ajouterLigne(compte)",
+  "Une ligne : nom, identifiant, rôle, état, actions.",
+  "Les boutons affichés suivent le rôle. Le serveur revérifie quand même. On ne propose pas de suspendre le propriétaire, ni de changer son propre rôle.");
+
+ajouter("javascript", "static/audit.js", "fonction", "nombre", "nombre(valeur)",
+  "Affiche un entier avec les espaces français.",
+  "Zéro si la valeur manque.");
+
+ajouter("javascript", "static/audit.js", "fonction", "octets", "octets(valeur)",
+  "Taille lisible : o, Ko, Mo, Go, To.",
+  "Le détail en octets exacts est souvent ajouté à côté.");
+
+ajouter("javascript", "static/audit.js", "fonction", "detailOctets", "detailOctets(valeur)",
+  "Le même nombre, écrit en toutes lettres « octets ».",
+  "Pour ne pas laisser seulement l'arrondi.");
+
+ajouter("javascript", "static/audit.js", "fonction", "dateCourte", "dateCourte(iso)",
+  "Date et heure locales.",
+  "Un tiret si la date manque ou n'est pas lisible.");
+
+ajouter("javascript", "static/audit.js", "fonction", "duree", "duree(secondes)",
+  "Durée en heures et minutes.",
+  "Sert au temps depuis le démarrage du processus.");
+
+ajouter("javascript", "static/audit.js", "fonction", "pourcent", "pourcent(part, total)",
+  "Pourcentage à une décimale.",
+  "Zéro pour cent si le total est nul, pour éviter une division par zéro.");
+
+ajouter("javascript", "static/audit.js", "fonction", "vider", "vider(id)",
+  "Vide une zone avant de la redessiner.",
+  "Retourner la zone permet d'y ajouter tout de suite les nouveaux blocs.");
+
+ajouter("javascript", "static/audit.js", "fonction", "carte", "carte(libellé, valeur, détail)",
+  "Un chiffre en gros, avec son libellé.",
+  "Le détail facultatif est en petit dessous.");
+
+ajouter("javascript", "static/audit.js", "fonction", "tableau", "tableau(colonnes, lignes, message vide)",
+  "Tableau HTML construit sans innerHTML.",
+  "Si une cellule est un nœud déjà prêt, elle est ajoutée telle quelle. Sinon son texte est écrit.");
+
+ajouter("javascript", "static/audit.js", "fonction", "listeSimple", "listeSimple(textes, message vide)",
+  "Liste à puces.",
+  "Message gris s'il n'y a rien.");
+
+ajouter("javascript", "static/audit.js", "fonction", "cours", "cours(fiche)",
+  "Matière, classe et spécialité sur une ligne.",
+  "Les morceaux vides sont retirés.");
+
+ajouter("javascript", "static/audit.js", "fonction", "peindre", "peindre()",
+  "Dessine tout l'audit du propriétaire.",
+  "Sessions, stockage, comptes, activité, étoiles, contenu, sécurité. La fiche la plus étoilée du site et les têtes par matière sont dans la section Étoiles.");
+
+ajouter("javascript", "static/audit.js", "fonction", "appliquer", "appliquer(données, message)",
+  "Remplace le relevé affiché.",
+  "Le message facultatif confirme une actualisation ou une suspension.");
+
+ajouter("javascript", "static/audit.js", "fonction", "actualiser", "actualiser(message)",
+  "Redemande le relevé au serveur.",
+  "Un 401 renvoie à la connexion. La page se rafraîchit aussi toute seule toutes les 20 secondes, sauf si l'onglet est caché.");
+
+ajouter("javascript", "static/audit_perso.js", "fonction", "nombre", "nombre(valeur)",
+  "Entier formaté pour l'audit personnel.",
+  "Même idée que sur l'audit du propriétaire, dans un script séparé pour ne pas mélanger les deux pages.");
+
+ajouter("javascript", "static/audit_perso.js", "fonction", "octets", "octets(valeur)",
+  "Taille lisible des fiches de l'élève.",
+  "Unités o, Ko, Mo, Go.");
+
+ajouter("javascript", "static/audit_perso.js", "fonction", "dateCourte", "dateCourte(iso)",
+  "Date locale d'un commentaire.",
+  "Tiret si la date est absente.");
+
+ajouter("javascript", "static/audit_perso.js", "fonction", "vider", "vider(id)",
+  "Vide une zone de l'audit personnel.",
+  "Avant de redessiner les chiffres ou les tableaux.");
+
+ajouter("javascript", "static/audit_perso.js", "fonction", "carte", "carte(libellé, valeur, détail)",
+  "Un chiffre de l'audit personnel.",
+  "Fiches, volume, étoiles, téléchargements, commentaires.");
+
+ajouter("javascript", "static/audit_perso.js", "fonction", "tableau", "tableau(colonnes, lignes, message vide)",
+  "Tableau des fiches ou des commentaires de l'élève.",
+  "Texte seulement, pas de HTML venant des commentaires.");
+
+ajouter("javascript", "static/audit_perso.js", "fonction", "cours", "cours(fiche)",
+  "Cours d'une fiche de l'élève.",
+  "Matière, classe, spécialité.");
+
+ajouter("javascript", "static/audit_perso.js", "fonction", "audience", "audience(valeur)",
+  "Libellé de visibilité dans l'audit personnel.",
+  "Tous les utilisateurs, Équipe, ou Utilisateurs et équipe.");
+
+ajouter("javascript", "static/audit_perso.js", "fonction", "statut", "statut(valeur, responsable)",
+  "État du commentaire dans l'audit.",
+  "En attente, pris en charge, ou validé, avec le nom du responsable s'il y en a un.");
+
+ajouter("javascript", "static/audit_perso.js", "fonction", "peindre", "peindre()",
+  "Dessine l'audit de mes fiches.",
+  "Le bouton Actualiser redemande /users/audit.json. Cette adresse ne contient pas l'identifiant d'un autre compte.");
+
+ajouter("javascript", "static/modifier.js", "script", "Formulaire de modification", "static/modifier.js",
+  "Envoie le formulaire de correction d'une fiche.",
+  "Le script n'a pas de fonction nommée : au chargement, il relit la fiche déjà dans la page, préremplit le titre et la description, branche le sélecteur de cours, puis poste le formulaire vers l'adresse data-save-url. Le serveur décide si ce compte a le droit d'enregistrer.");
+
+ajouter("javascript", "auth/static/login.js", "script", "Formulaire de connexion", "auth/static/login.js",
+  "Envoie l'identifiant et le mot de passe.",
+  "Pas de fonction nommée. Si le compte est déjà connecté, la page part vers son espace, ou vers le choix du mot de passe si c'est encore obligatoire. À la réussite, le nouveau mot de passe obligatoire gagne sur l'adresse next. Sinon le navigateur suit next, ou l'accueil du rôle.");
+
+ajouter("javascript", "auth/static/logout.js", "script", "Formulaire de déconnexion", "auth/static/logout.js",
+  "Confirme la sortie.",
+  "Pas de fonction nommée. Le formulaire poste /auth/logout. Le cookie de session est ensuite effacé côté serveur, puis la page revient à l'accueil.");
+
+ajouter("javascript", "auth/static/mot-de-passe.js", "script", "Formulaire du mot de passe", "auth/static/mot-de-passe.js",
+  "Envoie l'ancien mot de passe, le nouveau et sa confirmation.",
+  "Pas de fonction nommée. Le formulaire poste /auth/mot-de-passe en JSON. Si le serveur accepte, la page va vers l'accueil du rôle. Le mot de passe n'apparaît pas dans l'adresse.");

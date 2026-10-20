@@ -19,7 +19,7 @@ from flask_jwt_extended import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from database.model import User
+from database.model import User, db
 from utils.access import home_for_role, require_user
 from utils.http import safe_next_url
 from utils.presence import fermer_presence, ouvrir_presence
@@ -138,11 +138,13 @@ def login():
     token = create_access_token(identity=user.id)
     agent = request.headers.get("User-Agent") or ""
     ouvrir_presence(user.id, token, agent)
+    accueil = "/auth/mot-de-passe" if user.must_change_password else home_for_role(user.role)
     response = jsonify({
         "message": "Connexion réussie",
         "role": user.role,
         "username": user.username,
-        "home": home_for_role(user.role),
+        "home": accueil,
+        "must_change_password": bool(user.must_change_password),
     })
     set_access_cookies(response, token)
     return response, 200
@@ -181,6 +183,72 @@ def logout_page():
         user=public_profile(user),
         retour=home_for_role(user.role),
     )
+
+
+def _refus_mot_de_passe(user, actuel, nouveau, confirmation):
+    """None si le nouveau mot de passe peut remplacer l'ancien."""
+    if not isinstance(actuel, str) or not isinstance(nouveau, str) or not isinstance(confirmation, str):
+        return "Indique le mot de passe actuel et le nouveau.", 400
+    if len(actuel) > 200 or len(nouveau) > 200 or "\x00" in nouveau:
+        return "Mot de passe invalide.", 400
+    if login_blocked(user.username):
+        return "Trop de tentatives. Réessaie dans quelques minutes.", 429
+    if not check_password_hash(user.password, actuel):
+        login_failed(user.username)
+        return "Mot de passe actuel incorrect.", 401
+    if nouveau != confirmation:
+        return "Les deux nouveaux mots de passe ne sont pas identiques.", 400
+    if len(nouveau) < 10:
+        return "Le nouveau mot de passe doit faire au moins 10 caractères.", 400
+    if nouveau == actuel:
+        return "Choisis un mot de passe différent de l'actuel.", 400
+    if nouveau.casefold() == user.username.casefold():
+        return "Le mot de passe ne peut pas être l'identifiant.", 400
+    return None
+
+
+@auth_bp.route("/mot-de-passe", methods=["GET"])
+@jwt_required()
+def mot_de_passe_page():
+    """Formulaire : obligatoire à la première connexion, disponible ensuite à tout moment."""
+    user, error = require_user()
+    if error:
+        return error
+    return render_template(
+        "mot-de-passe/mot-de-passe.html",
+        obligatoire=bool(user.must_change_password),
+        retour=home_for_role(user.role),
+    )
+
+
+@auth_bp.route("/mot-de-passe", methods=["POST"])
+@jwt_required()
+def changer_mot_de_passe():
+    """Remplace le mot de passe après vérification de l'ancien."""
+    user, error = require_user()
+    if error:
+        return error
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Un objet JSON est requis"}), 400
+    refus = _refus_mot_de_passe(
+        user,
+        data.get("actuel"),
+        data.get("nouveau"),
+        data.get("confirmation"),
+    )
+    if refus:
+        message, code = refus
+        return jsonify({"error": message}), code
+    user.password = generate_password_hash(data.get("nouveau"))
+    user.must_change_password = False
+    db.session.commit()
+    login_succeeded(user.username)
+    return jsonify({
+        "message": "Mot de passe mis à jour",
+        "home": home_for_role(user.role),
+        "must_change_password": False,
+    }), 200
 
 
 @auth_bp.route("/logout", methods=["POST"])
