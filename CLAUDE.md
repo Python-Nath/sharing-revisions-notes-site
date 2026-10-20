@@ -1,59 +1,122 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for working in this repository. The product UI and the folder `documentation/` are in French. This file stays in English.
 
 ## Development Commands
 
-- **Install Dependencies**: `pip install -r requirements.txt`
-- **Run App (Dev)**: `python app.py` (runs on port 8000)
-- **Initial Server Setup**: `python make_structure.py && sh init-server.sh` (Creates subject hierarchy and configures systemd/nginx)
-- **Clean Workspace**: `sh clean.sh` (Removes all files from `matiere/` and `uploads/` except `.gitkeep`)
+- **Install**: `python3 -m venv ./venv && ./venv/bin/pip install -r requirements.txt`
+- **Course tree**: `./venv/bin/python make_structure.py`
+- **Demo accounts**: `./venv/bin/python init_users.py` (those passwords must be changed on first login)
+- **Run**: `./venv/bin/python app.py` (port 8000, debugger off). `python` is not on PATH on every machine. `init-server.sh` option 2 prefers `./venv/bin/python`.
+- **Tests**: `./venv/bin/python tests/test_flows.py`
+- **Server install**: `sh init-server.sh` option 1 writes commented env vars to `/etc/sharing-revisions-notes-site.env` and enables the unit `sharing-revisions-notes-site`.
+- **Clean**: `sh clean.sh` removes files under `matiere/` and `uploads/` except `.gitkeep`.
 
-## Architecture & Structure
+There is no public signup.
 
-### High-Level Overview
-A Flask-based file-sharing system for students. It uses a hybrid storage approach: a relational SQLite database for user accounts and history, and a hierarchical filesystem for file metadata and actual uploads.
+## Architecture
 
-### Key Components
-- **`app.py`**: Entry point. Configures JWT (cookie-based), SQLAlchemy, and defines core upload/download routes.
-- **`database/model.py`**: Defines the `User` model. Uses `JSON` columns to store lists of uploaded/downloaded file IDs and their associated metadata.
-- **`info/routes.py`**: Discovery API. Scans the `matiere/` directory structure to provide lists of subjects, classes, and specializations.
-- **`users/routes.py`**: User management, including JWT login/logout and a personal dashboard for managing owned files.
-- **`auth/routes.py`**: Authentication endpoints (login, logout, login/logout pages).
-- **`admin/routes.py`**: Admin blueprint (reserved for admin features).
-- **`moderator/routes.py`**: Moderator blueprint (reserved for moderator features).
-- **`matiere/`**: Filesystem-based metadata store. 
-    - Path: `matiere/<subject>/<class>/<specialization>/<file_id>.json`
-- **`uploads/`**: Flat storage for actual files, named as `<file_id>_<original_filename>`.
-- **`utils/`**: 
-    - `dir.py`: Optimized directory scanning using `os.scandir` and path validation logic.
-    - `json_utils.py`: Robust JSON read/write helpers with UTF-8 encoding and error handling.
-- **`make_structure.py`**: Generates the predefined school subject hierarchy.
-- **`init-server.sh`**: Deployment script for systemd service and Nginx configuration.
-- **`clean.sh`**: Interactive cleanup script for uploaded files and metadata.
+Flask app. SQLite holds accounts, sessions, stars and comments. The filesystem is the source of truth for sheets:
 
-### Blueprints & Templates
-Blueprints are used for modular routing. Templates are co-located with their blueprints using `template_folder="."` instead of a global `templates/` folder.
-- **`info_bp`** (`/info`): Public discovery endpoints
-- **`users_bp`** (`/users`): Authenticated user dashboard and file management
-- **`auth_bp`** (`/auth`): Authentication (login/logout)
+- `matiere/<subject>/<class>/<specialization>/<uuid>.json`
+- `uploads/<uuid>_<secure_filename>`
 
-### Authentication & Security
-- **JWT**: Implemented via `flask-jwt-extended` using cookies (`JWT_TOKEN_LOCATION = ["cookies"]`).
-- **Access Control**: 
-    - **Bans**: The `is_token_revoked` loader in `app.py` checks `User.is_ban` to invalidate tokens for banned users.
-    - **Path Safety**: Uses `secure_filename` and `Path.resolve()` with `is_relative_to()` to prevent path traversal attacks.
-- **CSRF**: Enabled via `JWT_COOKIE_CSRF_PROTECT = True`.
-- **Password Hashing**: Uses `werkzeug.security.generate_password_hash` / `check_password_hash`.
+`create_app()` creates tables, then adds missing columns, then enforces a single owner. Column migrations must run before any ORM read. `User` selects `must_change_password`. Querying users before `_colonne_mot_de_passe()` crashes on an old database.
 
-### Data Flow
-1. **Upload**: Authenticated User → Validate `matiere/` path → Save file to `uploads/` → Save JSON metadata to `matiere/.../` → Update `User` record in SQLite.
-2. **Discovery**: Client → `/info/...` → Scan `matiere/` hierarchy → Return lists of names.
-3. **Download**: Client → Fetch JSON from `matiere/.../` → Serve file from `uploads/` → Update `User` download history in SQLite.
-4. **Modify/Delete**: Authenticated user → Verify ownership via `user.uploaded_files` → Update/delete both filesystem metadata and SQLite records.
+### Blueprints
 
-### Critical Implementation Details
-- **Mutable JSON**: When updating `User.uploaded_metadatas` or `User.download_metadatas`, `sqlalchemy.orm.attributes.flag_modified` must be called before `db.session.commit()` to ensure changes are persisted.
-- **Metadata Sync**: Metadata JSONs in `matiere/` must be kept in sync with the `User` model's JSON columns.
-- **File ID**: UUIDv4 used as unique identifier for both metadata files and uploaded files.
-- **Defaults**: `JWT_COOKIE_SECURE = False` and `JWT_COOKIE_HTTPS_ONLY = False` for dev; must be `True` in production.
+Templates for auth live next to that blueprint (`template_folder="."`). The other pages are in `templates/`. Scripts are in `static/` except auth scripts in `auth/static/`.
+
+- `info_bp` `/info` : subjects, classes, specializations, file list, search. Public. Star counts are added in the response. `etoile_moi` is set only for the current account.
+- `auth_bp` `/auth` : login, logout, first-login and voluntary password change.
+- `users_bp` `/users` : own uploads and downloads, edit, delete, personal audit.
+- `moderator_bp` `/moderator` : edit or delete any sheet, ban a student, search accounts.
+- `admin_bp` `/admin` : same moderation, plus role changes. Owner can open these pages too.
+- `owner_bp` `/owner` : site audit and suspension. Admins do not see it and are blocked while the site is suspended.
+- `fiches_bp` `/fiches` : toggle a star, list and post comments, claim, validate, remove.
+
+`app.py` also serves `/accueil`, `POST /upload/...` and `GET /download/...`.
+
+### Roles
+
+Stored on `User.role` and read from the database on every request. Not copied into the JWT.
+
+- `user` : own sheets, stars, comments, personal audit.
+- `moderator` : any sheet, ban students, search accounts. Cannot change roles or ban staff.
+- `admin` : moderator powers, plus roles `user` / `moderator` / `admin`, and banning a moderator.
+- `owner` : exactly one. Partial unique index `uq_un_seul_proprietaire`. Nobody can assign this role from the admin page. Owner can suspend the site. On startup, extra owners are demoted to admin and the oldest remains.
+
+`can_moderate` : no self-ban, owner is untouchable, admin cannot ban another admin, moderator can ban only a student.
+
+### Stars
+
+Table `stars`, unique `(user_id, file_id)`. Logged-in users only. `POST /fiches/<id>/etoile` toggles. Owner audit shows the single most-starred sheet and the top sheet or sheets of each subject.
+
+### Comments
+
+Table `comments`. Any logged-in account can comment on any existing sheet.
+
+- `audience=auteur` : every `user`, plus the comment author.
+- `audience=equipe` : moderator, admin, owner, plus the author.
+- `audience=les_deux` : both groups.
+
+Limits: 20 comments by the same account on one sheet, 30 per account per day, body at most 2000 characters. A body over 16 KB is rejected before it is stored.
+
+Claim (`prendre`) is allowed for the sheet author or staff, and only while status is `ouvert` and `handler_id` is null. The update is conditional so only one claim succeeds. `corrected` is set back to false.
+
+`corrected` becomes true only when that same account later saves the sheet (`update_file(..., acteur=...)`). Staff routes must pass the logged-in user as `acteur`, not the sheet author. Delete of the comment is allowed only for that handler after `corrected` is true.
+
+Staff validate a claimed comment. The site owner can validate only if the handler is gone or banned.
+
+Deleting a sheet deletes its stars and comments in the same transaction, then the JSON and the upload. The browser reloads the page so a stale download link disappears.
+
+### Search
+
+`GET /info/recherche` : `q`, `auteur`, `etoiles_min`. Subject, class and speciality are still accepted by the API but are not fields in the form. The course menu is used for those. At least one criterion. Cap 80. `%` is not a LIKE wildcard. Internal `filename` is not returned.
+
+`GET /admin/comptes/recherche` and `GET /moderator/comptes/recherche` : `q`, `role`, `etat`. Staff only. No password in the payload. Cap 100.
+
+### Password change
+
+`User.must_change_password` defaults to true for new rows. `init_users.py` sets it true. Tests set it false in `creer_compte`. Old databases get the column via `ALTER TABLE` with default 0, so existing accounts are not forced.
+
+While the flag is true, `forcer_mot_de_passe()` allows only password change, login, logout, `/auth/me` and static files. HTML is redirected to `/auth/mot-de-passe`. JSON gets 403.
+
+`POST /auth/mot-de-passe` requires the current password, a matching confirmation, at least 10 characters, at most 200, different from the current password and from the username. Wrong current password counts toward `LOGIN_MAX_ATTEMPTS`. The voluntary page is the same URL. The nav link is `Mot de passe`.
+
+### Audits
+
+`/owner/audit` is the full site report, including star ranking. `/users/audit` is only that account's sheets and only comments they are allowed to read. No user id in the URL.
+
+### Authentication and security
+
+- JWT in HttpOnly cookies, `JWT_TOKEN_LOCATION = ["cookies"]`, CSRF on, SameSite Lax.
+- Access token lasts 8 hours.
+- `JWT_COOKIE_SECURE` is on only when the env var is `1`.
+- Revocation: missing user, `is_ban`, or an explicitly revoked presence row. Tokens issued before presence tracking have no row and stay valid until expiry. Bans are checked separately.
+- Login errors do not reveal whether the username exists. Attempts are counted per username for 10 minutes, not per IP.
+- Paths: `segment_ok`, `secure_filename`, resolved paths, `is_relative_to`, no symlinks. HTML, SVG and JavaScript uploads are rejected.
+- Responses that show user text use `textContent` or Jinja escaping. Do not introduce `innerHTML` for sheet or comment text.
+- `flag_modified` is required after mutating `uploaded_files`, `uploaded_metadatas`, `download_ids` or `download_metadatas`.
+- `wants_html()` is false for `/info`, `/upload` and `/download`, and for non-GET. Those errors stay JSON.
+- Site suspension is `instance/site_status.json` or `SITE_STATUS_PATH`. Owner still passes. Login stays available so the owner can return.
+
+### Environment
+
+Read at startup. Documented and written by `init-server.sh` option 1:
+
+- `JWT_SECRET_KEY`
+- `JWT_COOKIE_SECURE` (`0` or `1`)
+- `DATABASE_URI` (default `sqlite:///users.db`, file under `instance/`)
+- `LOGIN_MAX_ATTEMPTS` (default 8)
+- `SITE_STATUS_PATH`
+
+Local secret file if `JWT_SECRET_KEY` is unset: `instance/jwt_secret`.
+
+### Documentation folder
+
+`documentation/index.html` is a standalone browser file. It does not call this API and must not be registered as a Flask route. `precisions.js` is generated from the source. If you add a function, a column, a page or a CSS rule, extend the matching `documentation/donnees-*.js` entry and regenerate or extend `documentation/precisions.js` so the variable table and the ordered actions stay complete.
+
+### Tests
+
+`tests/test_flows.py` is the end-to-end check: auth, upload types, path traversal, roles, suspension, stars, search, comment visibility, single claim, comment removal after edit, first-login password change. Keep `creer_compte(..., must_change_password=False)` unless the test is about that flag. Run the file before calling the work done.
