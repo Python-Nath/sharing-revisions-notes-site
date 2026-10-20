@@ -2,13 +2,18 @@
 
 Ces routes sont publiques : elles ne renvoient que les noms de dossiers
 et le descriptif des fiches, jamais le fichier lui-même.
+La recherche ajoute le nombre d'étoiles. Elle ne dit pas qui a voté,
+sauf « etoile_moi » pour le compte qui est en train de regarder.
 """
 
-from flask import Blueprint
+from flask import Blueprint, request
 
+from utils.access import optional_user
 from utils.dir import child_dir, list_names
+from utils.etoiles import annoter
 from utils.files import public_metadata, read_metadata
 from utils.json_utils import load_json_object
+from utils.recherche import chercher_fiches
 from utils.security import is_uuid, project_dir
 
 
@@ -50,6 +55,15 @@ def get_specialite(matiere, classe):
     return {"specialite": list_names(class_dir, "dir")}, 200
 
 
+@info_bp.route("/recherche", methods=["GET"])
+def recherche():
+    """Fiches qui correspondent à tous les critères renseignés."""
+    resultat, erreur = chercher_fiches(request.args, optional_user())
+    if erreur:
+        return {"error": erreur[0]}, erreur[1]
+    return resultat, 200
+
+
 @info_bp.route("/files/<matiere>/<classe>/<specialite>", methods=["GET"])
 def get_files(matiere, classe, specialite):
     """Descriptifs des fiches d'un cours. Le téléchargement passe par /download."""
@@ -86,6 +100,7 @@ def get_files(matiere, classe, specialite):
         file_ids.append(file_id)
         # Même forme qu'avant : l'objet complet, pour les pages qui lisent title, author, desc, id.
         raw = load_json_object(speciality_dir / filename)
-        metadata_list.append(raw if raw is not None else public_metadata(metadata))
+        metadata_list.append(dict(raw) if raw is not None else public_metadata(metadata))
 
+    annoter(metadata_list, optional_user())
     return {"files": file_ids, "metadata": metadata_list}, 200

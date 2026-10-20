@@ -8,6 +8,33 @@
   </section>
 
   <section class="panneau">
+    <h2>Rechercher une fiche</h2>
+    <p class="note">Titre, description, auteur, fichier, matière, classe, spécialité ou nombre d'étoiles. Les critères se cumulent.</p>
+    <form id="form-recherche" class="recherche">
+      <label class="champ">Texte
+        <input type="search" name="q" maxlength="120" autocomplete="off">
+      </label>
+      <label class="champ">Matière
+        <input type="text" name="matiere" maxlength="80" autocomplete="off">
+      </label>
+      <label class="champ">Classe
+        <input type="text" name="classe" maxlength="80" autocomplete="off">
+      </label>
+      <label class="champ">Spécialité
+        <input type="text" name="specialite" maxlength="80" autocomplete="off">
+      </label>
+      <label class="champ">Auteur
+        <input type="text" name="auteur" maxlength="80" autocomplete="off">
+      </label>
+      <label class="champ">Étoiles minimum
+        <input type="number" name="etoiles_min" min="0" max="1000000" inputmode="numeric">
+      </label>
+      <button class="bouton" type="submit">Rechercher</button>
+    </form>
+    <div id="resultats" class="liste"></div>
+  </section>
+
+  <section class="panneau">
     <h2>Choisir un cours</h2>
     <div id="selecteur" class="selecteur"></div>
   </section>

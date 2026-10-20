@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }} — Fiches de révision{% endblock %}
+{% block contenu %}
+  <section class="intro">
+    <h1>Audit de mes fiches</h1>
+    <p>Bonjour {{ profil.name }} {{ profil.surname }}. Ce relevé ne contient que tes fiches : pas celles des autres, pas les sessions du site.</p>
+    <div class="actions">
+      <a class="bouton bouton-secondaire" href="/users/dashboard">Retour à mes fiches</a>
+      <button id="bouton-actualiser" class="bouton bouton-secondaire" type="button">Actualiser</button>
+    </div>
+  </section>
+  <p id="statut" class="statut" role="status"></p>
+
+  <section class="panneau">
+    <h2>Mes chiffres</h2>
+    <div id="zone-resume" class="grille-stats"></div>
+    <p id="zone-plus" class="note"></p>
+  </section>
+
+  <section class="panneau">
+    <h2>Mes fiches</h2>
+    <div id="zone-fiches"></div>
+  </section>
+
+  <section class="panneau">
+    <h2>Commentaires que je peux lire</h2>
+    <p class="note">Un commentaire réservé à l'équipe n'apparaît pas ici. Ceux que tu vois servent à corriger tes fiches.</p>
+    <div id="zone-commentaires"></div>
+  </section>
+
+  <script id="audit-data" type="application/json">{{ audit|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='audit_perso.js') }}"></script>
+{% endblock %}

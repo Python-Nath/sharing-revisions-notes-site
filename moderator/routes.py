@@ -4,10 +4,11 @@ Un modérateur peut corriger ou retirer une fiche, et suspendre un élève.
 Il ne peut ni créer un administrateur, ni suspendre un membre de l'équipe.
 """
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, jsonify, render_template, request
 from flask_jwt_extended import jwt_required
 
 from utils.access import require_roles, require_user, set_ban
+from utils.recherche import chercher_comptes
 from utils.dir import find_metadata_path
 from utils.files import owner_of, public_metadata, read_metadata, remove_file, update_file
 from utils.http import error_response
@@ -60,6 +61,19 @@ def comptes_page():
         peut_roles=False,
         titre="Comptes",
     )
+
+
+@moderator_bp.route("/comptes/recherche", methods=["GET"])
+@jwt_required()
+def recherche_comptes():
+    """Comptes selon le nom, le rôle ou l'état. Un élève reçoit un refus."""
+    _user, error = _staff_only()
+    if error:
+        return error
+    resultat, erreur = chercher_comptes(request.args)
+    if erreur:
+        return jsonify({"error": erreur[0]}), erreur[1]
+    return jsonify(resultat), 200
 
 
 @moderator_bp.route("/dashboard/modify/<file_id>", methods=["GET"])

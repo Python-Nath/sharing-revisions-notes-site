@@ -12,6 +12,7 @@ from utils.access import require_roles, require_user, set_ban, set_role
 from utils.dir import find_metadata_path
 from utils.files import owner_of, public_metadata, read_metadata, remove_file, update_file
 from utils.http import error_response
+from utils.recherche import chercher_comptes
 from utils.users import list_profiles, public_profile
 
 
@@ -61,6 +62,19 @@ def comptes_page():
         peut_roles=True,
         titre="Comptes",
     )
+
+
+@admin_bp.route("/comptes/recherche", methods=["GET"])
+@jwt_required()
+def recherche_comptes():
+    """Comptes selon le nom, le rôle ou l'état. Réservé à l'administration et au propriétaire."""
+    _user, error = _admin_only()
+    if error:
+        return error
+    resultat, erreur = chercher_comptes(request.args)
+    if erreur:
+        return jsonify({"error": erreur[0]}), erreur[1]
+    return jsonify(resultat), 200
 
 
 @admin_bp.route("/dashboard/modify/<file_id>", methods=["GET"])

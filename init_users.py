@@ -57,6 +57,16 @@ COMPTES = [
 
 def assurer_compte(compte):
     """Crée le compte ou réinitialise son rôle, son mot de passe et son état."""
+    # Un seul propriétaire : les autres comptes owner redeviennent administrateurs
+    # avant d'enregistrer celui-ci, sinon l'index unique refuse l'écriture.
+    if compte["role"] == "owner":
+        autres = User.query.filter(
+            User.role == "owner",
+            User.username != compte["username"],
+        ).all()
+        for autre in autres:
+            autre.role = "admin"
+
     utilisateur = User.query.filter_by(username=compte["username"]).first()
     cree = utilisateur is None
     if cree:

@@ -90,6 +90,224 @@ function lireJson(id) {
   }
 }
 
+function libelleAudience(audience) {
+  if (audience === "auteur") return "Pour l'auteur de la fiche";
+  if (audience === "equipe") return "Pour l'équipe";
+  if (audience === "les_deux") return "Pour l'auteur et l'équipe";
+  return "";
+}
+
+function libelleStatutCommentaire(commentaire) {
+  if (commentaire.statut === "valide") {
+    return "Validé" + (commentaire.responsable ? " par " + commentaire.responsable : "");
+  }
+  if (commentaire.statut === "pris") {
+    return "Pris en charge par " + (commentaire.responsable || "un responsable");
+  }
+  return "En attente";
+}
+
+function messageLocal(zone, texte, type) {
+  let paragraphe = zone.querySelector(".statut-local");
+  if (!paragraphe) {
+    paragraphe = document.createElement("p");
+    paragraphe.className = "statut statut-local";
+    paragraphe.setAttribute("role", "status");
+    zone.prepend(paragraphe);
+  }
+  paragraphe.textContent = texte || "";
+  paragraphe.classList.remove("ok", "erreur");
+  if (type) paragraphe.classList.add(type);
+}
+
+function allerConnexion() {
+  const retour = window.location.pathname + window.location.search;
+  window.location.assign("/auth/login-page?next=" + encodeURIComponent(retour));
+}
+
+function boutonEtoile(fiche) {
+  const bouton = document.createElement("button");
+  bouton.type = "button";
+  bouton.className = "bouton bouton-secondaire etoile";
+
+  function libelle(nombre, actif) {
+    const compte = Number(nombre) || 0;
+    bouton.textContent = (actif ? "★ " : "☆ ") + compte;
+    bouton.setAttribute("aria-pressed", actif ? "true" : "false");
+    bouton.setAttribute("aria-label", actif ? "Retirer mon étoile" : "Mettre une étoile");
+  }
+
+  libelle(fiche.etoiles, fiche.etoile_moi);
+  bouton.addEventListener("click", function () {
+    bouton.disabled = true;
+    api("/fiches/" + encodeURIComponent(fiche.id) + "/etoile", { method: "POST" }).then(function (reponse) {
+      bouton.disabled = false;
+      if (reponse.status === 401) {
+        allerConnexion();
+        return;
+      }
+      if (!reponse.ok) {
+        afficherStatut("statut", reponse.data.error || "Étoile impossible", "erreur");
+        return;
+      }
+      libelle(reponse.data.etoiles, reponse.data.etoile);
+    });
+  });
+  return bouton;
+}
+
+function dessinerCommentaires(fiche, panneau) {
+  panneau.replaceChildren();
+  const attente = document.createElement("p");
+  attente.className = "vide";
+  attente.textContent = "Chargement des commentaires…";
+  panneau.append(attente);
+
+  api("/fiches/" + encodeURIComponent(fiche.id) + "/commentaires").then(function (reponse) {
+    panneau.replaceChildren();
+    if (reponse.status === 401) {
+      const lien = document.createElement("a");
+      lien.href = "/auth/login-page?next=" + encodeURIComponent(window.location.pathname + window.location.search);
+      lien.textContent = "Connecte-toi pour lire et écrire un commentaire.";
+      panneau.append(lien);
+      return;
+    }
+    if (!reponse.ok) {
+      messageLocal(panneau, reponse.data.error || "Commentaires indisponibles", "erreur");
+      return;
+    }
+
+    const form = document.createElement("form");
+    const texte = document.createElement("textarea");
+    texte.name = "texte";
+    texte.required = true;
+    texte.maxLength = 2000;
+    texte.rows = 3;
+    texte.placeholder = "Un retour pour améliorer la fiche";
+    texte.setAttribute("aria-label", "Commentaire");
+    const audience = document.createElement("select");
+    audience.setAttribute("aria-label", "Qui peut lire ce commentaire");
+    [
+      ["auteur", "Seulement pour l'auteur de la fiche"],
+      ["equipe", "Seulement pour l'équipe (modération, admin, propriétaire)"],
+      ["les_deux", "Pour l'auteur et l'équipe"]
+    ].forEach(function (paire) {
+      const option = document.createElement("option");
+      option.value = paire[0];
+      option.textContent = paire[1];
+      audience.append(option);
+    });
+    const envoyer = document.createElement("button");
+    envoyer.type = "submit";
+    envoyer.className = "bouton";
+    envoyer.textContent = "Publier le commentaire";
+    const note = document.createElement("p");
+    note.className = "note";
+    note.textContent = "L'équipe ne voit pas un commentaire réservé à l'auteur. Elle ne peut s'en charger que s'il lui est adressé. Une seule personne peut le prendre.";
+    form.append(texte, audience, note, envoyer);
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      envoyer.disabled = true;
+      api("/fiches/" + encodeURIComponent(fiche.id) + "/commentaires", {
+        method: "POST",
+        json: { texte: texte.value, audience: audience.value }
+      }).then(function (creation) {
+        envoyer.disabled = false;
+        if (creation.status === 401) {
+          allerConnexion();
+          return;
+        }
+        if (!creation.ok) {
+          messageLocal(panneau, creation.data.error || "Commentaire refusé", "erreur");
+          return;
+        }
+        texte.value = "";
+        dessinerCommentaires(fiche, panneau);
+      });
+    });
+    panneau.append(form);
+
+    const liste = reponse.data.commentaires || [];
+    if (!liste.length) {
+      const vide = document.createElement("p");
+      vide.className = "vide";
+      vide.textContent = "Aucun commentaire visible pour toi.";
+      panneau.append(vide);
+      return;
+    }
+    liste.forEach(function (commentaire) {
+      const article = document.createElement("article");
+      article.className = "commentaire";
+      const titre = document.createElement("p");
+      titre.className = "meta";
+      titre.textContent = (commentaire.auteur || "Compte") + " · " + libelleAudience(commentaire.audience) + " · " + libelleStatutCommentaire(commentaire);
+      const corps = document.createElement("p");
+      corps.textContent = commentaire.texte || "";
+      article.append(titre, corps);
+      if (commentaire.peut_prendre) {
+        const prendre = document.createElement("button");
+        prendre.type = "button";
+        prendre.className = "bouton bouton-secondaire";
+        prendre.textContent = "Je m'en occupe";
+        prendre.addEventListener("click", function () {
+          prendre.disabled = true;
+          api("/fiches/" + encodeURIComponent(fiche.id) + "/commentaires/" + encodeURIComponent(commentaire.id) + "/prendre", {
+            method: "POST"
+          }).then(function (suite) {
+            if (!suite.ok) {
+              prendre.disabled = false;
+              messageLocal(panneau, suite.data.error || "Prise en charge impossible", "erreur");
+              return;
+            }
+            dessinerCommentaires(fiche, panneau);
+          });
+        });
+        article.append(prendre);
+      }
+      if (commentaire.peut_valider) {
+        const valider = document.createElement("button");
+        valider.type = "button";
+        valider.className = "bouton";
+        valider.textContent = "Valider le commentaire";
+        valider.addEventListener("click", function () {
+          valider.disabled = true;
+          api("/fiches/" + encodeURIComponent(fiche.id) + "/commentaires/" + encodeURIComponent(commentaire.id) + "/valider", {
+            method: "POST"
+          }).then(function (suite) {
+            if (!suite.ok) {
+              valider.disabled = false;
+              messageLocal(panneau, suite.data.error || "Validation impossible", "erreur");
+              return;
+            }
+            dessinerCommentaires(fiche, panneau);
+          });
+        });
+        article.append(valider);
+      }
+      panneau.append(article);
+    });
+  });
+}
+
+function zoneCommentaires(fiche) {
+  const bloc = document.createElement("div");
+  bloc.className = "commentaires";
+  const ouvrir = document.createElement("button");
+  ouvrir.type = "button";
+  ouvrir.className = "bouton bouton-secondaire";
+  ouvrir.textContent = "Commentaires";
+  const panneau = document.createElement("div");
+  panneau.hidden = true;
+  ouvrir.addEventListener("click", function () {
+    panneau.hidden = !panneau.hidden;
+    ouvrir.setAttribute("aria-expanded", panneau.hidden ? "false" : "true");
+    if (!panneau.hidden) dessinerCommentaires(fiche, panneau);
+  });
+  ouvrir.setAttribute("aria-expanded", "false");
+  bloc.append(ouvrir, panneau);
+  return bloc;
+}
+
 /* Carte d'une fiche. Le texte vient de textContent, jamais de innerHTML. */
 function carteFiche(fiche, actions) {
   const carte = document.createElement("article");
@@ -140,19 +358,73 @@ function carteFiche(fiche, actions) {
     barre.append(bouton);
   });
 
-  carte.append(titre, meta, description, fichier, barre);
+  const ligneEtoile = document.createElement("div");
+  ligneEtoile.className = "actions";
+  if (fiche.id) ligneEtoile.append(boutonEtoile(fiche));
+
+  carte.append(titre, meta, description, fichier, ligneEtoile, barre);
+  if (fiche.id) carte.append(zoneCommentaires(fiche));
   return carte;
 }
 
-function supprimerFiche(url, carte) {
+function supprimerFiche(url) {
   if (!window.confirm("Supprimer cette fiche ? Cette action est définitive.")) return;
   api(url, { method: "DELETE" }).then(function (reponse) {
     if (!reponse.ok) {
       afficherStatut("statut", reponse.data.error || "Suppression impossible", "erreur");
       return;
     }
-    if (carte) carte.remove();
-    afficherStatut("statut", "Fiche supprimée.", "ok");
+    /* Recharge toute la page : un lien de téléchargement encore affiché
+       pointerait vers une fiche qui n'existe plus. */
+    sessionStorage.setItem("flash", "Fiche supprimée.");
+    window.location.reload();
+  });
+}
+
+/* Recherche de fiches. Chaque champ vide est ignoré, le serveur exige au moins un critère. */
+function monterRechercheFiches(formulaire, zone, actionsPour) {
+  if (!formulaire || !zone) return;
+  formulaire.addEventListener("submit", function (event) {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    new FormData(formulaire).forEach(function (valeur, cle) {
+      const texte = String(valeur || "").trim();
+      if (texte) params.set(cle, texte);
+    });
+    zone.replaceChildren();
+    if (!params.toString()) {
+      afficherStatut("statut", "Indique au moins un critère.", "erreur");
+      return;
+    }
+    const attente = document.createElement("p");
+    attente.className = "vide";
+    attente.textContent = "Recherche…";
+    zone.append(attente);
+    api("/info/recherche?" + params.toString()).then(function (reponse) {
+      zone.replaceChildren();
+      if (!reponse.ok) {
+        afficherStatut("statut", reponse.data.error || "Recherche impossible", "erreur");
+        return;
+      }
+      const liste = reponse.data.fiches || [];
+      if (!liste.length) {
+        const vide = document.createElement("p");
+        vide.className = "vide";
+        vide.textContent = "Aucune fiche ne correspond.";
+        zone.append(vide);
+        return;
+      }
+      liste.forEach(function (fiche) {
+        if (!fiche || !fiche.id) return;
+        zone.append(carteFiche(fiche, actionsPour ? actionsPour(fiche) : []));
+      });
+      if (reponse.data.tronque) {
+        const suite = document.createElement("p");
+        suite.className = "note";
+        suite.textContent = "Seules les 80 premières fiches sont affichées. Affine la recherche.";
+        zone.append(suite);
+      }
+    });
   });
 }
 
@@ -374,4 +646,10 @@ function remplirNavigation() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", remplirNavigation);
+document.addEventListener("DOMContentLoaded", function () {
+  remplirNavigation();
+  const flash = sessionStorage.getItem("flash");
+  if (!flash) return;
+  sessionStorage.removeItem("flash");
+  afficherStatut("statut", flash, "ok");
+});

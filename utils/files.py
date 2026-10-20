@@ -13,7 +13,7 @@ from utils.http import error_response
 from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.utils import secure_filename
 
-from database.model import User, db
+from database.model import Comment, Star, User, db
 from utils.dir import find_metadata_path
 from utils.json_utils import load_json_object, save_json_file
 from utils.security import (
@@ -320,6 +320,10 @@ def remove_file(owner, file_id):
     file_path = upload_path(stored)
     if file_path is None:
         return jsonify({"error": "Fichier stocké invalide"}), 400
+
+    # Même transaction que le compte : une étoile ou un commentaire ne survit pas à la fiche.
+    Star.query.filter(Star.file_id == file_id).delete(synchronize_session=False)
+    Comment.query.filter(Comment.file_id == file_id).delete(synchronize_session=False)
 
     owner.uploaded_files = [item for item in (owner.uploaded_files or []) if item != file_id]
     flag_modified(owner, "uploaded_files")

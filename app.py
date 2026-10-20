@@ -17,9 +17,12 @@ from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required
 from flask_jwt_extended.exceptions import JWTExtendedException
 from werkzeug.exceptions import HTTPException
 
+from sqlalchemy import text
+
 from admin.routes import admin_bp
 from auth.routes import auth_bp
 from database.model import User, db
+from fiches.routes import fiches_bp
 from info.routes import info_bp
 from moderator.routes import moderator_bp
 from owner.routes import owner_bp
@@ -83,6 +86,7 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        _un_seul_proprietaire()
 
     @jwt.token_in_blocklist_loader
     def token_revoked(_header, payload):
@@ -138,7 +142,7 @@ def create_app():
             "default-src 'self'; img-src 'self' data:; style-src 'self'; "
             "script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         )
-        if request.path.startswith(("/users", "/admin", "/moderator", "/auth", "/owner")):
+        if request.path.startswith(("/users", "/admin", "/moderator", "/auth", "/owner", "/fiches")):
             response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -230,7 +234,31 @@ def create_app():
     app.register_blueprint(moderator_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(owner_bp)
+    app.register_blueprint(fiches_bp)
     return app
+
+
+def _un_seul_proprietaire():
+    """Garde le propriétaire le plus ancien et interdit d'en créer un second.
+
+    L'index n'existe que pour SQLite, la base utilisée par le site.
+    """
+    proprietaires = (
+        User.query.filter_by(role="owner")
+        .order_by(User.created_at.asc(), User.id.asc())
+        .all()
+    )
+    for extra in proprietaires[1:]:
+        extra.role = "admin"
+    if len(proprietaires) > 1:
+        db.session.commit()
+    if db.engine.url.get_backend_name() != "sqlite":
+        return
+    db.session.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_un_seul_proprietaire "
+        "ON users (role) WHERE role = 'owner'"
+    ))
+    db.session.commit()
 
 
 def _noter_presence():

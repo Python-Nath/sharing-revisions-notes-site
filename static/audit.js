@@ -252,6 +252,45 @@ document.addEventListener("DOMContentLoaded", function () {
       (activite.top_auteurs || []).map(function (ligne) { return [ligne.username, nombre(ligne.nombre)]; }),
       "Aucune publication."
     ));
+    const etoiles = audit.etoiles || {};
+    const zoneEtoiles = vider("zone-etoiles");
+    if (zoneEtoiles) {
+      zoneEtoiles.append(
+        carte("Étoiles posées", nombre(etoiles.total)),
+        carte("Matières avec une étoile", nombre((etoiles.par_matiere || []).length))
+      );
+    }
+    const globale = vider("zone-etoile-globale");
+    if (globale) {
+      if (!etoiles.plus_etoilee) {
+        const vide = document.createElement("p");
+        vide.className = "vide";
+        vide.textContent = "Aucune fiche n'a encore d'étoile.";
+        globale.append(vide);
+      } else {
+        const fiche = etoiles.plus_etoilee;
+        globale.append(tableau(
+          ["Titre", "Auteur", "Cours", "Étoiles"],
+          [[fiche.titre, fiche.auteur, cours(fiche), nombre(fiche.etoiles)]],
+          "Aucune fiche n'a encore d'étoile."
+        ));
+      }
+    }
+    const parMatiere = [];
+    (etoiles.par_matiere || []).forEach(function (groupe) {
+      (groupe.fiches || []).forEach(function (fiche) {
+        parMatiere.push([groupe.matiere, fiche.titre, fiche.auteur, cours(fiche), nombre(fiche.etoiles)]);
+      });
+    });
+    const zoneMatieresEtoiles = vider("zone-etoiles-matiere");
+    if (zoneMatieresEtoiles) {
+      zoneMatieresEtoiles.append(tableau(
+        ["Matière", "Titre", "Auteur", "Cours", "Étoiles"],
+        parMatiere,
+        "Aucune matière n'a de fiche étoilée."
+      ));
+    }
+
     vider("zone-lecteurs").append(tableau(
       ["Identifiant", "Téléchargements"],
       (activite.top_lecteurs || []).map(function (ligne) { return [ligne.username, nombre(ligne.nombre)]; }),

@@ -14,6 +14,7 @@ from sqlalchemy.engine.url import make_url
 
 from database.model import User
 from utils.dir import child_dir, list_names
+from utils.etoiles import classement
 from utils.files import read_metadata
 from utils.json_utils import load_json_object
 from utils.presence import resume_sessions, _iso, _maintenant
@@ -385,6 +386,7 @@ def collecter_audit():
             "tentatives_suivies": tentatives["suivis"],
             "comptes_suspendus": sorted(suspendus, key=lambda item: item["username"]),
         },
+        "etoiles": classement(),
     }
 
 

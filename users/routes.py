@@ -4,11 +4,13 @@ Un élève ne peut agir que sur les fiches présentes dans son propre compte,
 et dont il est aussi l'auteur dans le JSON.
 """
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, jsonify, render_template, request
 from flask_jwt_extended import jwt_required
 
 from utils.access import require_user
+from utils.audit_perso import collecter_audit_perso
 from utils.dir import find_metadata_path
+from utils.etoiles import annoter
 from utils.files import files_from_cache, owner_of, read_metadata, remove_file, update_file
 from utils.files import public_metadata
 from utils.http import error_response
@@ -28,14 +30,39 @@ def dashboard():
     if error:
         return error
 
-    uploaded = files_from_cache(user.uploaded_files, user.uploaded_metadatas)
-    downloaded = files_from_cache(user.download_ids, user.download_metadatas)
+    uploaded = annoter(files_from_cache(user.uploaded_files, user.uploaded_metadatas), user)
+    downloaded = annoter(files_from_cache(user.download_ids, user.download_metadatas), user)
     return render_template(
         "user_dashboard.html",
         profil=public_profile(user, include_status=True),
         envoyes=uploaded,
         telecharges=downloaded,
     )
+
+
+@users_bp.route("/audit", methods=["GET"])
+@jwt_required()
+def audit_page():
+    """Relevé des fiches de ce compte, et de rien d'autre."""
+    user, error = require_user()
+    if error:
+        return error
+    return render_template(
+        "audit_perso.html",
+        profil=public_profile(user),
+        audit=collecter_audit_perso(user),
+        titre="Audit de mes fiches",
+    )
+
+
+@users_bp.route("/audit.json", methods=["GET"])
+@jwt_required()
+def audit_json():
+    """Même relevé, pour actualiser la page sans mélanger les comptes."""
+    user, error = require_user()
+    if error:
+        return error
+    return jsonify(collecter_audit_perso(user)), 200
 
 
 @users_bp.route("/dashboard/modify/<file_id>", methods=["GET"])

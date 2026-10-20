@@ -164,6 +164,36 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 
 .fiche h3 { margin: 0 0 0.3rem; }
 
+.etoile[aria-pressed="true"] {
+  background: #f4e4b3;
+  color: #6a4b00;
+  border-color: #c4a15a;
+}
+
+.recherche {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.6rem 0.8rem;
+  align-items: end;
+}
+
+.recherche .champ { margin: 0; }
+
+.recherche .bouton { justify-self: start; }
+
+.commentaires { margin-top: 0.8rem; }
+
+.commentaire {
+  border-top: 1px solid var(--ligne);
+  margin-top: 0.8rem;
+  padding-top: 0.6rem;
+}
+
+.commentaire-form, .commentaires form {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .meta, .note, .fichier, .pied {
   color: var(--encre-douce);
 }

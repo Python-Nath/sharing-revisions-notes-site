@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
     fiches.forEach(function (fiche) {
-      let carte;
       const actions = avecActions ? [
         {
           libelle: "Modifier",
@@ -23,12 +22,11 @@ document.addEventListener("DOMContentLoaded", function () {
           libelle: "Supprimer",
           classe: "bouton-danger",
           onClick: function () {
-            supprimerFiche("/users/dashboard/delete/" + encodeURIComponent(fiche.id), carte);
+            supprimerFiche("/users/dashboard/delete/" + encodeURIComponent(fiche.id));
           }
         }
       ] : [];
-      carte = carteFiche(fiche, actions);
-      zone.append(carte);
+      zone.append(carteFiche(fiche, actions));
     });
   }
 

@@ -29,6 +29,7 @@ class User(db.Model):
     # Hash Werkzeug, jamais le mot de passe en clair.
     password = db.Column(db.String(200), nullable=False)
     # user, moderator, admin ou owner. La valeur est relue à chaque requête.
+    # Un index unique empêche d'enregistrer deux propriétaires.
     role = db.Column(db.String(20), nullable=False, default="user")
     is_ban = db.Column(db.Boolean, nullable=False, default=False)
     # Listes JSON : SQLAlchemy appelle list() et dict() pour chaque nouvelle ligne.
@@ -58,3 +59,47 @@ class Presence(db.Model):
     expires_at = db.Column(db.DateTime, nullable=False, index=True)
     user_agent = db.Column(db.String(240), nullable=False, default="")
     revoked = db.Column(db.Boolean, nullable=False, default=False)
+
+
+class Star(db.Model):
+    """Une étoile d'un compte sur une fiche. Une seule par couple compte/fiche."""
+
+    __tablename__ = "stars"
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "file_id", name="uq_etoile_compte_fiche"),
+    )
+
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    user_id = db.Column(db.String(36), nullable=False, index=True)
+    file_id = db.Column(db.String(36), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, nullable=False)
+
+
+class Comment(db.Model):
+    """Retour sur une fiche.
+
+    audience : auteur (auteur de la fiche), equipe (modération), les_deux.
+    status : ouvert, puis pris par une seule personne, puis valide.
+    """
+
+    __tablename__ = "comments"
+    __table_args__ = (
+        db.CheckConstraint(
+            "audience IN ('auteur', 'equipe', 'les_deux')",
+            name="ck_commentaire_audience",
+        ),
+        db.CheckConstraint(
+            "status IN ('ouvert', 'pris', 'valide')",
+            name="ck_commentaire_statut",
+        ),
+    )
+
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    file_id = db.Column(db.String(36), nullable=False, index=True)
+    author_id = db.Column(db.String(36), nullable=False, index=True)
+    audience = db.Column(db.String(20), nullable=False)
+    body = db.Column(db.String(2000), nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="ouvert")
+    handler_id = db.Column(db.String(36), nullable=True, index=True)
+    created_at = db.Column(db.DateTime, nullable=False)
+    updated_at = db.Column(db.DateTime, nullable=False)

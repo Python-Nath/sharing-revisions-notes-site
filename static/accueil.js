@@ -53,6 +53,8 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  monterRechercheFiches(document.getElementById("form-recherche"), document.getElementById("resultats"));
+
   const selecteur = monterSelecteur(document.getElementById("selecteur"), {
     onChange: function (nouveau) {
       choix = nouveau;

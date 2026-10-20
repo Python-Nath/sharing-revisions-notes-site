@@ -5,7 +5,7 @@ donc un changement de rôle ou un ban s'applique tout de suite.
 """
 
 from flask import jsonify, redirect
-from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 
 from database.model import User, db
 from utils.http import error_response, wants_html
@@ -29,6 +29,25 @@ def load_current_user():
     if not identity:
         return None
     return db.session.get(User, identity)
+
+
+def optional_user():
+    """Compte du jeton s'il est encore valide, sinon None.
+
+    Un cookie absent, expiré ou révoqué ne bloque pas la page publique :
+    la personne est simplement traitée comme non connectée.
+    """
+    try:
+        verify_jwt_in_request(optional=True)
+    except Exception:
+        return None
+    identity = get_jwt_identity()
+    if not identity or not is_uuid(identity):
+        return None
+    user = db.session.get(User, identity)
+    if user is None or user.is_ban:
+        return None
+    return user
 
 
 def require_user():

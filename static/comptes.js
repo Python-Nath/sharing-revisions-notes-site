@@ -8,13 +8,18 @@ document.addEventListener("DOMContentLoaded", function () {
   const comptes = lireJson("comptes-data") || [];
   const corps = document.getElementById("corps-comptes");
 
+  function dessiner(liste) {
+    corps.replaceChildren();
+    liste.forEach(ajouterLigne);
+  }
+
   function cellule(texte) {
     const td = document.createElement("td");
     td.textContent = texte;
     return td;
   }
 
-  comptes.forEach(function (compte) {
+  function ajouterLigne(compte) {
     const ligne = document.createElement("tr");
     ligne.append(
       cellule((compte.name || "") + " " + (compte.surname || "")),
@@ -96,5 +101,48 @@ document.addEventListener("DOMContentLoaded", function () {
 
     ligne.append(actions);
     corps.append(ligne);
-  });
+  }
+
+  const formulaire = document.getElementById("form-recherche");
+  if (formulaire) {
+    formulaire.addEventListener("submit", function (event) {
+      event.preventDefault();
+      const params = new URLSearchParams();
+      new FormData(formulaire).forEach(function (valeur, cle) {
+        const texte = String(valeur || "").trim();
+        if (texte) params.set(cle, texte);
+      });
+      if (!params.toString()) {
+        afficherStatut("statut", "Indique au moins un critère.", "erreur");
+        return;
+      }
+      api(prefixe + "/comptes/recherche?" + params.toString()).then(function (reponse) {
+        if (reponse.status === 401) {
+          window.location.assign("/auth/login-page?next=" + encodeURIComponent(window.location.pathname));
+          return;
+        }
+        if (!reponse.ok) {
+          afficherStatut("statut", reponse.data.error || "Recherche impossible", "erreur");
+          return;
+        }
+        dessiner(reponse.data.comptes || []);
+        afficherStatut(
+          "statut",
+          reponse.data.tronque ? "Liste limitée aux 100 premiers comptes." : "",
+          reponse.data.tronque ? "ok" : ""
+        );
+      });
+    });
+  }
+
+  const tout = document.getElementById("bouton-tous");
+  if (tout) {
+    tout.addEventListener("click", function () {
+      if (formulaire) formulaire.reset();
+      dessiner(comptes);
+      afficherStatut("statut", "", "");
+    });
+  }
+
+  dessiner(comptes);
 });

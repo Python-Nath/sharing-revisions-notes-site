@@ -36,7 +36,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       liste.forEach(function (fiche) {
         if (!fiche || !fiche.id) return;
-        let carte;
         const actions = [
           {
             libelle: "Modifier",
@@ -46,15 +45,30 @@ document.addEventListener("DOMContentLoaded", function () {
             libelle: "Supprimer",
             classe: "bouton-danger",
             onClick: function () {
-              supprimerFiche(prefixe + "/dashboard/delete/" + encodeURIComponent(fiche.id), carte);
+              supprimerFiche(prefixe + "/dashboard/delete/" + encodeURIComponent(fiche.id));
             }
           }
         ];
-        carte = carteFiche(fiche, actions);
-        fichiers.append(carte);
+        fichiers.append(carteFiche(fiche, actions));
       });
     });
   }
+
+  monterRechercheFiches(document.getElementById("form-recherche"), document.getElementById("resultats"), function (fiche) {
+    return [
+      {
+        libelle: "Modifier",
+        href: prefixe + "/dashboard/modify/" + encodeURIComponent(fiche.id)
+      },
+      {
+        libelle: "Supprimer",
+        classe: "bouton-danger",
+        onClick: function () {
+          supprimerFiche(prefixe + "/dashboard/delete/" + encodeURIComponent(fiche.id));
+        }
+      }
+    ];
+  });
 
   const selecteur = monterSelecteur(document.getElementById("selecteur"), {
     onChange: function (nouveau) {
