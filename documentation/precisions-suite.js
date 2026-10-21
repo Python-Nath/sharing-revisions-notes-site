@@ -21,6 +21,7 @@ preciser("Présentation", "Le site en une minute", [
   "L'élève choisit un cours, publie ou télécharge.",
   "Le serveur vérifie le chemin, le type de fichier et le compte.",
   "Le navigateur n'écrit jamais le HTML des fiches à la main : il crée des éléments et y pose du texte.",
+  "Les panneaux, cartes, menus et onglets s'animent. prefers-reduced-motion coupe ces mouvements.",
   "La recherche de fiches et de comptes filtre pendant la saisie.",
   "L'audit du propriétaire ouvre des graphiques. Les détails sont dans des onglets.",
   "Le pied de page ouvre les mentions, la confidentialité, les cookies et les licences."
@@ -226,7 +227,7 @@ preciser("static/style.css", ".fiche", [
   ["background", "#fff."],
   ["border-radius", "12px."],
   ["padding", "1rem."]
-], ["La carte contient titre, meta, description, fichier, étoile, actions, commentaires."]);
+], ["La carte monte en apparaissant, puis se soulève au survol. Elle contient titre, meta, description, fichier, étoile, actions, commentaires."]);
 
 preciser("static/style.css", ".recherche", [
   ["grid-template-columns", "repeat(auto-fit, minmax(12rem, 1fr))."],
@@ -576,7 +577,8 @@ preciser("documentation/index.html", "Page de cette documentation", [
   "Ouvrir le fichier dans le navigateur. Aucun serveur n'est contacté.",
   "menu.js construit les pastilles et le sommaire à partir de window.DOCS.",
   "Un clic de fiche pose le texte à gauche et le code coloré à droite, chacun sur la moitié.",
-  "Le code s'affiche en entier : pas de hauteur maximale, pas de barre de défilement dans le bloc."
+  "Le code s'affiche en entier : pas de hauteur maximale, pas de barre de défilement dans le bloc.",
+  "Le contenu de #lecture monte en fondu. prefers-reduced-motion annule ce mouvement."
 ]);
 
 preciser("static/common.js", "carteFiche", [
@@ -714,7 +716,7 @@ preciser("legal/routes.py", "licences", [
 preciser("static/style.css", ".menu-liste", [
   ["summary", "Pilule blanche, bord forêt, sans puce de liste."],
   [".menu-panneau", "Panneau absolu, fond blanc, ombre, liens et boutons empilés."]
-], ["S'ouvre au clic sur le résumé. Le panneau passe au-dessus du contenu."]);
+], ["S'ouvre au clic sur le résumé avec l'animation deployer. Le panneau passe au-dessus du contenu."]);
 
 preciser("static/style.css", ".menu-legal", [
   ["display", "flex, centré, avec retour à la ligne."]
@@ -726,7 +728,7 @@ preciser("static/style.css", ".barre-fiche", [
 
 preciser("static/style.css", ".onglets", [
   ["button[aria-selected=true]", "Texte forêt foncée, bord bas forêt."]
-], ["Les autres boutons restent sans bord et en encre douce."]);
+], ["La couleur et le trait changent en transition. Le panneau visible joue surgir."]);
 
 preciser("static/style.css", ".piste", [
   ["span", "Largeur 0 au départ, animation jusqu'à --largeur en 0,8 s."],
@@ -742,7 +744,33 @@ preciser("static/style.css", ".anneau", [
 preciser("static/style.css", ".banniere-cookies", [
   ["position", "fixed, en bas, au-dessus du contenu."],
   ["p", "Prend la place restante, au moins 16rem avant de passer à la ligne."]
-], ["Cachée tant que hidden est posé."]);
+], ["Cachée tant que hidden est posé. À l'apparition, l'animation glisser la fait monter."]);
+
+preciser("static/style.css", "mouvements", [
+  ["--duree", "0,28 s. Durée de base des transitions."],
+  ["--courbe", "cubic-bezier(0.22, 1, 0.36, 1). Arrivée plus douce que le départ."],
+  ["monter", "Opacité 0 et 12 pixels plus bas, vers l'état normal. Panneaux, cartes, commentaires, statistiques."],
+  ["surgir", "Même idée, 8 pixels, pour l'onglet qui devient visible."],
+  ["deployer", "Le menu part un peu au-dessus, légèrement réduit, puis se pose."],
+  ["glisser", "Le bandeau cookies part 1,2 rem plus bas."],
+  ["fondu", "Opacité seule. Messages, légende, lignes du tableau."],
+  ["eclat", "L'étoile posée passe à l'échelle 1,12 puis revient à 1."]
+], [
+  "Les blocs directs de main arrivent l'un après l'autre, décalés de 0,05 s.",
+  "Les huit premières cartes d'une liste sont décalées de 0,04 s.",
+  "Ouvrir un menu details joue deployer sur .menu-panneau.",
+  "Changer d'onglet joue surgir sur le panneau montré.",
+  "Poser une étoile joue eclat parce que aria-pressed passe à true."
+]);
+
+preciser("static/style.css", "mouvement réduit", [
+  ["prefers-reduced-motion", "Réglage du système, pas un bouton du site."],
+  ["animation-duration", "0,01 ms, avec !important, pour gagner sur les autres règles."],
+  ["transition-duration", "0,01 ms aussi."],
+  ["scroll-behavior", "auto, pas de défilement doux."]
+], [
+  "Si le visiteur demande moins de mouvement, les cartes, menus, onglets, barres et l'anneau apparaissent déjà en place."
+]);
 
 preciser("static/common.js", "monterRechercheFiches", [
   ["formulaire", "Formulaire de recherche de fiches : texte, auteur, étoiles minimum."],

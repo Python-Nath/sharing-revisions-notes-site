@@ -70,4 +70,4 @@ ajouter("html", "templates/legal/licences.html", "page", "Licences", "templates/
 
 ajouter("html", "documentation/index.html", "page", "Page de cette documentation", "documentation/index.html",
   "Le fichier ouvert dans le navigateur, sans le site Flask.",
-  "En-tête, recherche, pastilles de langage, sommaire et zone de lecture. Les scripts donnees-*.js, precisions.js, sources.js, coloration.js et menu.js sont dans la page. Aucun n'appelle l'application.");
+  "En-tête, recherche, pastilles de langage, sommaire et zone de lecture. Changer de fiche fait monter le nouveau texte. Les scripts donnees-*.js, precisions.js, sources.js, coloration.js et menu.js sont dans la page. Aucun n'appelle l'application. Un réglage système qui demande moins de mouvement coupe cette animation.");

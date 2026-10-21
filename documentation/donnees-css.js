@@ -46,11 +46,11 @@ ajouter("css", "static/style.css", "règle", ".selecteur et .champ", ".selecteur
 
 ajouter("css", "static/style.css", "règle", "champs de saisie", "input, select, textarea",
   "Tous les champs ont la même forme.",
-  "Largeur 100 %, fond blanc, bord beige, coins 10 pixels. Le focus dessine un contour ambre de 3 pixels, aussi sur les boutons et les liens.");
+  "Largeur 100 %, fond blanc, bord beige, coins 10 pixels. Le focus dessine un contour ambre de 3 pixels, aussi sur les boutons et les liens. Le bord passe au vert et une ombre légère apparaît, en transition.");
 
 ajouter("css", "static/style.css", "règle", ".bouton", ".bouton",
   "Bouton principal, vert forêt, texte blanc, forme de pilule.",
-  "Le survol passe au vert foncé. Un bouton désactivé est pâle et le curseur montre l'attente.");
+  "Le survol passe au vert foncé et soulève le bouton d'un pixel. L'appui le rapproche. Un bouton désactivé est pâle, ne bouge pas, et le curseur montre l'attente.");
 
 ajouter("css", "static/style.css", "règle", ".bouton-secondaire", ".bouton-secondaire",
   "Bouton discret : fond transparent, texte et bord verts.",
@@ -66,11 +66,11 @@ ajouter("css", "static/style.css", "règle", ".actions", ".actions, .ligne-actio
 
 ajouter("css", "static/style.css", "règle", ".fiche", ".fiche",
   "Carte d'une fiche.",
-  "Fond blanc, bord ligne, coins 12 pixels. Le titre est serré contre le haut.");
+  "Fond blanc, bord ligne, coins 12 pixels. Le titre est serré contre le haut. La carte monte en apparaissant, et se soulève encore un peu au survol.");
 
 ajouter("css", "static/style.css", "règle", ".etoile", ".etoile[aria-pressed=true]",
   "Étoile déjà posée par le compte.",
-  "Fond doré #f4e4b3, texte brun #6a4b00, bord #c4a15a. L'étoile non posée garde le style secondaire.");
+  "Fond doré #f4e4b3, texte brun #6a4b00, bord #c4a15a. Au moment où elle est posée, elle grossit puis revient. L'étoile non posée garde le style secondaire et grandit un peu au survol.");
 
 ajouter("css", "static/style.css", "règle", ".recherche", ".recherche",
   "Grille du formulaire de recherche.",
@@ -122,7 +122,7 @@ ajouter("css", "static/style.css", "règle", ".menu-legal", ".menu-legal",
 
 ajouter("css", "static/style.css", "règle", ".menu-liste", ".menu-liste",
   "Menu déroulant cliquable.",
-  "Le résumé est une pilule. Le panneau s'ouvre en dessous, au-dessus du reste de la page. Les liens et boutons du panneau n'ont pas l'air d'une rangée de boutons : ils sont empilés, fond transparent, surlignés au survol.");
+  "Le résumé est une pilule. Le panneau s'ouvre en descendant légèrement, au-dessus du reste de la page. Les liens et boutons du panneau sont empilés, fond transparent, et leur fond arrive en fondu au survol.");
 
 ajouter("css", "static/style.css", "règle", ".barre-fiche", ".barre-fiche",
   "Étoile et menu Actions sur une carte.",
@@ -130,7 +130,7 @@ ajouter("css", "static/style.css", "règle", ".barre-fiche", ".barre-fiche",
 
 ajouter("css", "static/style.css", "règle", ".onglets", ".onglets",
   "Onglets de l'audit du propriétaire.",
-  "Le bouton choisi a un trait forêt en dessous. Les autres restent en encre douce.");
+  "Le bouton choisi a un trait forêt en dessous. La couleur et le trait changent en transition. Le panneau affiché monte de quelques pixels.");
 
 ajouter("css", "static/style.css", "règle", ".piste", ".piste",
   "Barre de graphique.",
@@ -142,11 +142,19 @@ ajouter("css", "static/style.css", "règle", ".anneau", ".anneau",
 
 ajouter("css", "static/style.css", "règle", ".banniere-cookies", ".banniere-cookies",
   "Bandeau fixé en bas de l'écran.",
-  "Carte, bord et ombre du thème. Le texte prend la place restante, le lien et le bouton restent à côté, ou en dessous si l'écran est étroit.");
+  "Carte, bord et ombre du thème. Quand il apparaît, il glisse vers le haut. Le texte prend la place restante, le lien et le bouton restent à côté, ou en dessous si l'écran est étroit.");
 
 ajouter("css", "static/style.css", "règle", "[hidden]", "[hidden]",
   "Un élément hidden ne s'affiche pas, même si une autre règle voudrait le montrer.",
   "Sert aux formulaires d'envoi et aux panneaux de commentaires fermés.");
+
+ajouter("css", "static/style.css", "règle", "mouvements", "@keyframes monter",
+  "Entrées des panneaux, cartes, commentaires, statistiques et lignes de graphique.",
+  "monter soulève de 12 pixels en faisant apparaître. surgir fait de même, plus court, pour un onglet. deployer ouvre un menu depuis le haut. glisser fait monter le bandeau cookies. fondu ne déplace rien. eclat grossit l'étoile à 1,12 puis la ramène. Les huit premières cartes et les six premières lignes de tableau sont légèrement décalées, pour ne pas arriver toutes en même temps. La durée de base est --duree, 0,28 s, avec la courbe --courbe.");
+
+ajouter("css", "static/style.css", "règle", "mouvement réduit", "@media (prefers-reduced-motion: reduce)",
+  "Coupe les animations si le système le demande.",
+  "Durées d'animation et de transition ramenées à 0,01 ms. Le défilement doux est aussi retiré. Les graphiques restent lisibles, ils n'ont plus le temps de s'animer.");
 
 ajouter("css", "static/style.css", "règle", "petit écran", "@media (max-width: 700px)",
   "Le bandeau passe en colonne.",
