@@ -742,6 +742,15 @@ function remplirNavigation() {
   });
 }
 
+function fermerMenusAuChoix() {
+  document.addEventListener("click", function (event) {
+    const choix = event.target.closest(".menu-panneau a, .menu-panneau button");
+    if (!choix) return;
+    const menu = choix.closest("details.menu-liste");
+    if (menu) menu.open = false;
+  });
+}
+
 function preparerCookies() {
   const bandeau = document.getElementById("banniere-cookies");
   const bouton = document.getElementById("cookies-ok");
@@ -757,6 +766,7 @@ function preparerCookies() {
 document.addEventListener("DOMContentLoaded", function () {
   remplirNavigation();
   preparerCookies();
+  fermerMenusAuChoix();
   const flash = sessionStorage.getItem("flash");
   if (!flash) return;
   sessionStorage.removeItem("flash");

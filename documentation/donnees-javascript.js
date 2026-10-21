@@ -116,6 +116,10 @@ ajouter("javascript", "static/common.js", "fonction", "remplirNavigation", "remp
   "Construit le menu du compte en haut de page.",
   "Sans compte : lien Connexion. Si le mot de passe doit encore être choisi et que la page n'est pas celle du mot de passe, le navigateur y part. Sinon un menu au nom de la personne contient Mon espace, Mot de passe et Déconnexion. Annonce ensuite l'événement compte-connu.");
 
+ajouter("javascript", "static/common.js", "fonction", "fermerMenusAuChoix", "fermerMenusAuChoix()",
+  "Ferme un menu déroulant dès qu'on choisit une option.",
+  "Vaut pour tous les details.menu-liste : Pilotage, le compte, Mon menu, Actions d'une fiche, le menu de l'équipe. Un clic sur un lien ou un bouton du panneau met open à faux. Il faut recliquer le résumé pour rouvrir. Le sommaire de la documentation n'est pas concerné.");
+
 ajouter("javascript", "static/common.js", "fonction", "preparerCookies", "preparerCookies()",
   "Montre le bandeau des cookies tant qu'il n'a pas été accepté.",
   "Lit la clé fiches-cookies dans le stockage local. Si elle vaut compris, le bandeau reste caché. Le bouton J'ai compris écrit cette valeur et cache le bandeau. Ce n'est pas un cookie envoyé au serveur.");

@@ -609,6 +609,16 @@ preciser("static/common.js", "remplirNavigation", [
   "Écrit Bonjour dans #salut s'il existe, puis émet compte-connu."
 ]);
 
+preciser("static/common.js", "fermerMenusAuChoix", [
+  ["choix", "Lien ou bouton à l'intérieur de .menu-panneau."],
+  ["menu", "L'élément details.menu-liste qui contient ce choix."],
+  ["menu.open", "Passe à faux. Le panneau disparaît."]
+], [
+  "Écoute les clics de toute la page, y compris les menus créés après le chargement.",
+  "Si le clic n'est pas une option de menu, ne fait rien.",
+  "Sinon ferme ce menu seulement. Les autres menus déjà fermés restent fermés."
+]);
+
 preciser("static/common.js", "preparerCookies", [
   ["bandeau", "Élément #banniere-cookies, caché dans le HTML."],
   ["bouton", "Élément #cookies-ok."],
@@ -718,7 +728,10 @@ preciser("legal/routes.py", "licences", [
 preciser("static/style.css", ".menu-liste", [
   ["summary", "Pilule blanche, bord forêt, sans puce de liste."],
   [".menu-panneau", "Panneau absolu, fond blanc, ombre, liens et boutons empilés."]
-], ["S'ouvre au clic sur le résumé avec l'animation deployer. Le panneau passe au-dessus du contenu."]);
+], [
+  "S'ouvre au clic sur le résumé avec l'animation deployer.",
+  "Un choix dans le panneau referme le menu. Il faut recliquer le résumé."
+]);
 
 preciser("static/style.css", ".menu-legal", [
   ["display", "flex, centré, avec retour à la ligne."]

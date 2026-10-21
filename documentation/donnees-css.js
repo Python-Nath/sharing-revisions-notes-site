@@ -124,7 +124,7 @@ ajouter("css", "static/style.css", "règle", ".menu-legal", ".menu-legal",
 
 ajouter("css", "static/style.css", "règle", ".menu-liste", ".menu-liste",
   "Menu déroulant cliquable.",
-  "Le résumé est une pilule. Le panneau s'ouvre en descendant légèrement, au-dessus du reste de la page. Les liens et boutons du panneau sont empilés, fond transparent, et leur fond arrive en fondu au survol.");
+  "Le résumé est une pilule. Le panneau s'ouvre en descendant légèrement. Un clic sur un lien ou un bouton le referme : il faut recliquer le résumé. Les entrées sont empilées, fond transparent, surlignées au survol.");
 
 ajouter("css", "static/style.css", "règle", ".barre-fiche", ".barre-fiche",
   "Étoile et menu Actions sur une carte.",

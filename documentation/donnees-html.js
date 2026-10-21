@@ -14,11 +14,11 @@ ajouter("html", "templates/user_dashboard.html", "page", "Espace élève", "temp
 
 ajouter("html", "templates/audit_perso.html", "page", "Audit de mes fiches", "templates/audit_perso.html",
   "Graphique, liste et commentaires de ses propres fiches.",
-  "Le menu Actions contient le retour au tableau de bord et le bouton Actualiser. Le graphique des étoiles est dans graphique-perso. La grille de chiffres zone-resume reste cachée. Le JSON audit-data est dans la page.");
+  "Le menu Actions contient le retour au tableau de bord et le bouton Actualiser. Il se referme dès qu'on choisit une entrée. Le graphique des étoiles est dans graphique-perso. La grille de chiffres zone-resume reste cachée. Le JSON audit-data est dans la page.");
 
 ajouter("html", "templates/audit.html", "page", "Audit du propriétaire", "templates/audit.html",
   "Relevé de tout le site, réservé au propriétaire, rangé en onglets.",
-  "Le menu Pilotage contient suspendre, actualiser, modérer et gérer les comptes. L'onglet Vue d'ensemble montre les graphiques. Sessions, Contenu, Étoiles et Sécurité sont cachés jusqu'au clic. Les zones sont vides dans le HTML : audit.js les peint. Le premier relevé est dans audit-data.");
+  "Le menu Pilotage contient suspendre, actualiser, modérer et gérer les comptes. Choisir une option le referme. L'onglet Vue d'ensemble montre les graphiques. Sessions, Contenu, Étoiles et Sécurité sont cachés jusqu'au clic. Les zones sont vides dans le HTML : audit.js les peint. Le premier relevé est dans audit-data.");
 
 ajouter("html", "templates/staff_dashboard.html", "page", "Espace modération ou administration", "templates/staff_dashboard.html",
   "Même page pour les deux rôles. Le préfixe change.",
