@@ -12,6 +12,10 @@ ajouter("javascript", "static/common.js", "fonction", "afficherStatut", "affiche
   "Écrit un message dans une zone de la page.",
   "type vaut ok ou erreur. Le texte passe par textContent, jamais par du HTML injecté.");
 
+ajouter("javascript", "static/common.js", "fonction", "destinationSure", "destinationSure(rôle, chemin)",
+  "Choisit où envoyer la personne après la connexion.",
+  "Si le chemin demandé est l'espace d'un autre rôle, elle va vers son propre espace. Un élève n'est jamais envoyé vers /moderator, /admin ou /owner. Le serveur refait le même contrôle.");
+
 ajouter("javascript", "static/common.js", "fonction", "lienEspace", "lienEspace(rôle)",
   "Adresse de l'espace personnel.",
   "Propriétaire vers l'audit du site, admin et modérateur vers leur tableau, élève vers le sien.");
@@ -130,11 +134,15 @@ ajouter("javascript", "static/accueil.js", "fonction", "chargerFiches", "charger
 
 ajouter("javascript", "static/espace.js", "fonction", "remplir", "remplir(zone, fiches, avec actions)",
   "Affiche les envois ou les téléchargements de l'élève.",
-  "Les actions Modifier et Supprimer ne sont mises que sur les envois. Supprimer recharge la page.");
+  "Modifier et Supprimer ne sont mis que sur les envois, déjà filtrés par le serveur pour ne garder que les fiches de ce compte. Les téléchargements n'ont pas ces actions. Supprimer recharge la page seulement si le serveur accepte.");
 
-ajouter("javascript", "static/staff.js", "fonction", "charger", "charger()",
+ajouter("javascript", "static/staff.js", "fonction", "demarrer", "demarrer()",
+  "Ouvre le tableau de bord de l'équipe.",
+  "Appelée seulement après compte-connu, et seulement si le rôle est modérateur, admin ou propriétaire. Un élève est envoyé vers /users/dashboard. Le préfixe lu dans la page doit être /admin ou /moderator, sinon même renvoi.");
+
+ajouter("javascript", "static/staff.js", "fonction", "charger", "charger()  — dans demarrer",
   "Affiche les fiches du cours choisi dans l'espace équipe.",
-  "Ajoute Modifier et Supprimer. Le préfixe /admin ou /moderator vient de la page, donc les deux rôles partagent ce script.");
+  "Chaque carte a Modifier et Supprimer, vers le préfixe de la page. Le serveur revérifie le rôle au moment du clic.");
 
 ajouter("javascript", "static/comptes.js", "fonction", "dessiner", "dessiner(liste)",
   "Remplace le tableau des comptes.",

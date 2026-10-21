@@ -4,8 +4,23 @@
    partagent ce script sans dupliquer les boutons. */
 
 document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("compte-connu", function (event) {
+    const role = event.detail && event.detail.role;
+    if (role !== "moderator" && role !== "admin" && role !== "owner") {
+      window.location.replace(lienEspace(role || "user"));
+      return;
+    }
+    demarrer();
+  });
+});
+
+function demarrer() {
   const config = document.getElementById("staff-config");
   const prefixe = config ? config.dataset.prefix : "";
+  if (prefixe !== "/moderator" && prefixe !== "/admin") {
+    window.location.replace("/users/dashboard");
+    return;
+  }
   const fichiers = document.getElementById("fichiers");
   let choix = null;
 
@@ -77,4 +92,4 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
   selecteur.demarrer();
-});
+}

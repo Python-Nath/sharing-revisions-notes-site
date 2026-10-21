@@ -52,6 +52,63 @@ def home_for_role(role):
     return "/users/dashboard"
 
 
+def chemin_autorise(role, chemin):
+    """Vrai si ce rôle a le droit d'ouvrir ce chemin.
+
+    Les pages publiques restent ouvertes à tout le monde. Les espaces
+    /users, /moderator, /admin et /owner sont séparés.
+    """
+    if not isinstance(chemin, str) or not chemin.startswith("/") or chemin.startswith("//"):
+        return False
+    if any(caractere in chemin for caractere in ("\\", "\x00", "\r", "\n", " ")):
+        return False
+    if chemin.startswith("/owner"):
+        return role == "owner"
+    if chemin.startswith("/admin"):
+        return role in ("admin", "owner")
+    if chemin.startswith("/moderator"):
+        return role in ("moderator", "admin", "owner")
+    if chemin.startswith("/users"):
+        return role in ("user", "moderator", "admin", "owner")
+    return True
+
+
+def destination_sure(role, chemin):
+    """Adresse après connexion : le chemin demandé s'il est permis, sinon l'espace du rôle."""
+    if chemin in ("", None, "/accueil", "/auth/login-page"):
+        return home_for_role(role)
+    if chemin_autorise(role, chemin):
+        return chemin
+    return home_for_role(role)
+
+
+def peut_gerer_fiche(acteur, proprietaire):
+    """Vrai si ce compte peut modifier ou supprimer la fiche de cet auteur.
+
+    Un élève ne gère que ses propres fiches. L'équipe gère les fiches de
+    tout le monde. Personne ne passe si le compte est suspendu.
+    """
+    if acteur is None or proprietaire is None or acteur.is_ban:
+        return False
+    if acteur.id == proprietaire.id:
+        return True
+    return acteur.role in ("moderator", "admin", "owner")
+
+
+def garde_espaces():
+    """Refuse un espace qui n'appartient pas au rôle, avant la vue."""
+    if not request.path.startswith(("/users", "/moderator", "/admin", "/owner")):
+        return None
+    user = optional_user()
+    if user is None:
+        return None
+    if chemin_autorise(user.role, request.path):
+        return None
+    if wants_html():
+        return redirect(home_for_role(user.role))
+    return jsonify({"error": "Accès refusé"}), 403
+
+
 def load_current_user():
     """Compte lié au jeton, ou None s'il n'existe plus."""
     identity = get_jwt_identity()

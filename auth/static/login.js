@@ -10,10 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
       window.location.assign("/auth/mot-de-passe");
       return;
     }
-    const suivant = config.next && config.next !== "/accueil"
-      ? config.next
-      : lienEspace(event.detail.role);
-    window.location.assign(suivant);
+    window.location.assign(destinationSure(event.detail.role, config.next));
   });
 
   formulaire.addEventListener("submit", function (event) {
@@ -24,7 +21,8 @@ document.addEventListener("DOMContentLoaded", function () {
       method: "POST",
       json: {
         username: formulaire.username.value.trim(),
-        password: formulaire.password.value
+        password: formulaire.password.value,
+        next: config.next
       }
     }).then(function (reponse) {
       bouton.disabled = false;
@@ -34,10 +32,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       if (reponse.data.must_change_password) {
         window.location.assign("/auth/mot-de-passe");
-        return;
-      }
-      if (config.next && config.next !== "/accueil" && config.next !== "/auth/login-page") {
-        window.location.assign(config.next);
         return;
       }
       window.location.assign(reponse.data.home || lienEspace(reponse.data.role));

@@ -14,6 +14,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.utils import secure_filename
 
 from database.model import Comment, Star, User, db
+from utils.access import peut_gerer_fiche
 from utils.dir import find_metadata_path
 from utils.json_utils import load_json_object, save_json_file
 from utils.security import (
@@ -215,6 +216,8 @@ def update_file(owner, file_id, form, storage, acteur=None):
     """
     if not is_uuid(file_id):
         return jsonify({"error": "Identifiant de fiche invalide"}), 400
+    if not peut_gerer_fiche(acteur, owner):
+        return jsonify({"error": "Accès refusé"}), 403
     if file_id not in (owner.uploaded_files or []):
         return jsonify({"error": "Cette fiche ne figure pas dans les envois de ce compte"}), 403
 
@@ -315,10 +318,18 @@ def update_file(owner, file_id, form, storage, acteur=None):
     return jsonify({"message": "Fiche mise à jour"}), 200
 
 
-def remove_file(owner, file_id):
-    """Retire la fiche du compte, puis du disque."""
+def remove_file(acteur, file_id):
+    """Retire la fiche du compte de son auteur, puis du disque.
+
+    acteur est la personne connectée. Un élève ne retire que sa propre fiche.
+    """
     if not is_uuid(file_id):
         return jsonify({"error": "Identifiant de fiche invalide"}), 400
+    owner, owner_error = owner_of(file_id)
+    if owner_error:
+        return owner_error
+    if not peut_gerer_fiche(acteur, owner):
+        return jsonify({"error": "Accès refusé"}), 403
     if file_id not in (owner.uploaded_files or []):
         return jsonify({"error": "Cette fiche ne figure pas dans les envois de ce compte"}), 403
 

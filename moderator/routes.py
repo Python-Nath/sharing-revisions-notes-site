@@ -118,10 +118,7 @@ def delete_file(file_id):
     _user, error = _staff_only()
     if error:
         return error
-    owner, owner_error = owner_of(file_id)
-    if owner_error:
-        return owner_error
-    return remove_file(owner, file_id)
+    return remove_file(_user, file_id)
 
 
 @moderator_bp.route("/dashboard/ban/<user_id>", methods=["POST"])

@@ -20,7 +20,7 @@ from flask_jwt_extended import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database.model import User, db
-from utils.access import home_for_role, require_user
+from utils.access import destination_sure, home_for_role, require_user
 from utils.http import safe_next_url
 from utils.presence import fermer_presence, ouvrir_presence
 from utils.site_gate import lire_etat
@@ -138,7 +138,10 @@ def login():
     token = create_access_token(identity=user.id)
     agent = request.headers.get("User-Agent") or ""
     ouvrir_presence(user.id, token, agent)
-    accueil = "/auth/mot-de-passe" if user.must_change_password else home_for_role(user.role)
+    if user.must_change_password:
+        accueil = "/auth/mot-de-passe"
+    else:
+        accueil = destination_sure(user.role, data.get("next"))
     response = jsonify({
         "message": "Connexion réussie",
         "role": user.role,

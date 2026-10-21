@@ -73,6 +73,19 @@ function lienEspace(role) {
   return "/users/dashboard";
 }
 
+function destinationSure(role, chemin) {
+  if (!chemin || chemin === "/accueil" || chemin === "/auth/login-page") return lienEspace(role);
+  if (chemin.indexOf("/owner") === 0 && role !== "owner") return lienEspace(role);
+  if (chemin.indexOf("/admin") === 0 && role !== "admin" && role !== "owner") return lienEspace(role);
+  if (chemin.indexOf("/moderator") === 0 && role !== "moderator" && role !== "admin" && role !== "owner") {
+    return lienEspace(role);
+  }
+  if (chemin.indexOf("/users") === 0 && role !== "user" && role !== "moderator" && role !== "admin" && role !== "owner") {
+    return lienEspace(role);
+  }
+  return chemin;
+}
+
 function libelleRole(role) {
   if (role === "owner") return "Propriétaire";
   if (role === "admin") return "Administrateur";

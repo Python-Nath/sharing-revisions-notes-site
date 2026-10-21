@@ -31,6 +31,7 @@ def dashboard():
         return error
 
     uploaded = annoter(files_from_cache(user.uploaded_files, user.uploaded_metadatas), user)
+    uploaded = [fiche for fiche in uploaded if fiche.get("author") == user.username]
     downloaded = annoter(files_from_cache(user.download_ids, user.download_metadatas), user)
     return render_template(
         "user_dashboard.html",

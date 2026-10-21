@@ -6,7 +6,7 @@ ajouter("python", "app.py", "fonction", "_load_secret", "_load_secret()",
 
 ajouter("python", "app.py", "fonction", "create_app", "create_app()",
   "Construit l'application, la base et les protections.",
-  "Elle règle la taille maximale d'un envoi à 100 Mo, les cookies de session, le CSRF, et la base SQLite. Elle crée les tables, ajoute les colonnes manquantes (mot de passe à changer, commentaire corrigé), puis garantit un seul propriétaire. Elle enregistre aussi le blueprint /legal. Le serveur lancé par python app.py n'active pas le débogueur Flask.");
+  "Elle règle la taille maximale d'un envoi à 100 Mo, les cookies de session, le CSRF, et la base SQLite. Elle crée les tables, ajoute les colonnes manquantes (mot de passe à changer, commentaire corrigé), puis garantit un seul propriétaire. Avant chaque requête, elle vérifie la pause, le mot de passe obligatoire, puis garde_espaces : un élève n'ouvre pas /moderator, /admin ni /owner. Elle enregistre aussi le blueprint /legal. Le serveur lancé par python app.py n'active pas le débogueur Flask.");
 
 ajouter("python", "app.py", "fonction", "token_revoked", "token_revoked(en-tête, payload)",
   "Invalide un jeton déjà émis.",
@@ -178,11 +178,11 @@ ajouter("python", "utils/files.py", "fonction", "_noter_suivi", "_noter_suivi(ac
 
 ajouter("python", "utils/files.py", "fonction", "update_file", "update_file(auteur, identifiant, formulaire, fichier, acteur)",
   "Modifie le texte, le cours, et éventuellement le document.",
-  "L'auteur affiché ne change pas. acteur est la personne qui enregistre : élève, modérateur, admin ou propriétaire. C'est lui qui pourra retirer le commentaire qu'il suit.");
+  "peut_gerer_fiche refuse d'abord un élève qui n'est pas l'auteur. L'auteur affiché ne change pas. acteur est la personne connectée : c'est elle qui pourra retirer le commentaire qu'elle suit.");
 
-ajouter("python", "utils/files.py", "fonction", "remove_file", "remove_file(auteur, identifiant)",
-  "Retire la fiche du compte, puis du disque.",
-  "Les étoiles et les commentaires de cette fiche sont supprimés dans la même transaction. Le JSON et le document partent ensuite.");
+ajouter("python", "utils/files.py", "fonction", "remove_file", "remove_file(acteur, identifiant)",
+  "Retire la fiche du compte de son auteur, puis du disque.",
+  "acteur est la personne connectée, pas un auteur choisi par le formulaire. La fonction retrouve l'auteur avec owner_of, puis peut_gerer_fiche. Un élève ne retire que sa fiche. L'équipe retire celle des autres. Les étoiles et les commentaires partent dans la même transaction, puis le JSON et le document.");
 
 ajouter("python", "utils/files.py", "fonction", "resolve_download", "resolve_download(matière, classe, spécialité, identifiant)",
   "Prépare un téléchargement.",
@@ -323,6 +323,22 @@ ajouter("python", "utils/recherche.py", "fonction", "chercher_comptes", "cherche
 ajouter("python", "utils/access.py", "fonction", "home_for_role", "home_for_role(rôle)",
   "Page d'arrivée selon le rôle.",
   "Propriétaire : audit du site. Admin : espace administration. Modérateur : espace modération. Élève : son tableau de bord.");
+
+ajouter("python", "utils/access.py", "fonction", "chemin_autorise", "chemin_autorise(rôle, chemin)",
+  "Dit si ce rôle peut ouvrir cette adresse.",
+  "/owner est au propriétaire. /admin à l'admin et au propriétaire. /moderator à l'équipe. /users à tout compte connecté. Le reste du site est public.");
+
+ajouter("python", "utils/access.py", "fonction", "destination_sure", "destination_sure(rôle, chemin)",
+  "Adresse suivie après la connexion.",
+  "Un next vide, /accueil, ou un espace interdit est remplacé par l'espace du rôle. Un élève ne sort jamais vers le tableau du modérateur.");
+
+ajouter("python", "utils/access.py", "fonction", "peut_gerer_fiche", "peut_gerer_fiche(acteur, propriétaire)",
+  "Dit si ce compte peut modifier ou supprimer cette fiche.",
+  "L'auteur gère la sienne. Modérateur, administrateur et propriétaire gèrent aussi celles des autres. Un élève ne gère pas la fiche d'un modérateur.");
+
+ajouter("python", "utils/access.py", "fonction", "garde_espaces", "garde_espaces()",
+  "Bloque un espace avant même la vue.",
+  "Appelée à chaque requête. Sans session, elle laisse la vue répondre 401. Avec une session du mauvais rôle, elle renvoie vers le bon espace, ou 403 en JSON.");
 
 ajouter("python", "utils/access.py", "fonction", "load_current_user", "load_current_user()",
   "Compte lié au jeton.",
@@ -570,7 +586,7 @@ ajouter("python", "fiches/routes.py", "fonction", "retirer_commentaire", "retire
 
 ajouter("python", "users/routes.py", "fonction", "dashboard", "dashboard()",
   "Tableau de bord de l'élève.",
-  "Ses envois et ses téléchargements, avec le nombre d'étoiles. Le lien vers l'audit personnel est sur la page.");
+  "Ses envois et ses téléchargements, avec le nombre d'étoiles. Un envoi dont l'auteur du JSON n'est pas ce compte n'est pas listé, donc pas de bouton Supprimer sur la fiche d'un autre. Le lien vers l'audit personnel est sur la page.");
 
 ajouter("python", "users/routes.py", "fonction", "audit_page", "audit_page()",
   "Page d'audit de ses fiches.",
@@ -590,7 +606,7 @@ ajouter("python", "users/routes.py", "fonction", "save_modified_file", "save_mod
 
 ajouter("python", "users/routes.py", "fonction", "delete_file", "delete_file(identifiant)",
   "Supprime une fiche de l'élève.",
-  "Passe par remove_file. Le JavaScript recharge ensuite la page.");
+  "Passe le compte connecté à remove_file. Si la fiche est celle d'un modérateur, d'un admin ou d'un autre élève, la réponse est 403. Le JavaScript recharge la page seulement après un succès.");
 
 ajouter("python", "moderator/routes.py", "fonction", "_staff_only", "_staff_only()",
   "Laisse passer modérateur, admin et propriétaire.",
@@ -617,8 +633,8 @@ ajouter("python", "moderator/routes.py", "fonction", "save_modified_file", "save
   "L'auteur d'origine est conservé. L'acteur du commentaire suivi est le modérateur connecté.");
 
 ajouter("python", "moderator/routes.py", "fonction", "delete_file", "delete_file(identifiant)",
-  "Supprime une fiche.",
-  "La retire aussi du compte de son auteur.");
+  "Supprime une fiche depuis la modération.",
+  "Le compte connecté, déjà contrôlé par _staff_only, est passé à remove_file. Un élève qui appelle cette adresse reçoit 403 avant même cette fonction, par garde_espaces.");
 
 ajouter("python", "moderator/routes.py", "fonction", "ban_user", "ban_user(identifiant)",
   "Suspend un élève.",
@@ -654,7 +670,7 @@ ajouter("python", "admin/routes.py", "fonction", "save_modified_file", "save_mod
 
 ajouter("python", "admin/routes.py", "fonction", "delete_file", "delete_file(identifiant)",
   "Supprime une fiche depuis l'administration.",
-  "Retire aussi les rappels, étoiles et commentaires.");
+  "Réservé à l'admin et au propriétaire. remove_file retire la fiche du compte de son auteur, ainsi que les étoiles et les commentaires.");
 
 ajouter("python", "admin/routes.py", "fonction", "ban_user", "ban_user(identifiant)",
   "Suspend un élève ou un modérateur.",
@@ -710,7 +726,7 @@ ajouter("python", "auth/routes.py", "fonction", "etat_tentatives", "etat_tentati
 
 ajouter("python", "auth/routes.py", "fonction", "login", "login()",
   "Vérifie l'identifiant et pose le cookie.",
-  "POST /auth/login. Le message d'erreur est le même si le compte n'existe pas ou si le mot de passe est faux. Un compte suspendu est refusé. Pendant une pause, seul le propriétaire entre. Le cookie est HttpOnly. Si le mot de passe doit encore être choisi, home vaut /auth/mot-de-passe.");
+  "POST /auth/login. Le message d'erreur est le même si le compte n'existe pas ou si le mot de passe est faux. Un compte suspendu est refusé. Pendant une pause, seul le propriétaire entre. Le cookie est HttpOnly. Si le mot de passe doit encore être choisi, home vaut /auth/mot-de-passe. Sinon next n'est suivi que si ce rôle peut ouvrir la page : un élève envoyé vers /moderator/dashboard reçoit /users/dashboard.");
 
 ajouter("python", "auth/routes.py", "fonction", "me", "me()",
   "Décrit le compte connecté.",

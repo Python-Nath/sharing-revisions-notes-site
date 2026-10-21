@@ -39,7 +39,7 @@ ajouter(
   "Les quatre rôles",
   "user, moderator, admin, owner",
   "Le rôle est relu dans la base à chaque action. Il n'est pas copié dans le jeton de connexion.",
-  "Élève (user) : publie ses fiches, les modifie, les supprime, met une étoile, commente, consulte l'audit de ses propres fiches.\n\nModérateur (moderator) : corrige ou retire une fiche, suspend un élève, cherche les comptes. Il ne change pas les rôles et ne suspend pas l'équipe.\n\nAdministrateur (admin) : fait le même travail de modération, change les rôles élève, modérateur ou administrateur, et suspend un élève ou un modérateur. Il ne touche pas au propriétaire.\n\nPropriétaire (owner) : voit l'audit de tout le site, suspend ou rouvre le site, et peut aussi modérer. Personne ne peut lui retirer ce rôle depuis les pages."
+  "Élève (user) : publie ses fiches, les modifie, les supprime, met une étoile, commente, consulte l'audit de ses propres fiches. Il ne retire pas la fiche d'un autre et n'ouvre pas /moderator, /admin ni /owner.\n\nModérateur (moderator) : corrige ou retire une fiche, suspend un élève, cherche les comptes. Il ne change pas les rôles et ne suspend pas l'équipe.\n\nAdministrateur (admin) : fait le même travail de modération, change les rôles élève, modérateur ou administrateur, et suspend un élève ou un modérateur. Il ne touche pas au propriétaire.\n\nPropriétaire (owner) : voit l'audit de tout le site, suspend ou rouvre le site, et peut aussi modérer. Personne ne peut lui retirer ce rôle depuis les pages."
 );
 
 ajouter(

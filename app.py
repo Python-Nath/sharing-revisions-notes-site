@@ -117,6 +117,13 @@ def create_app():
 
         return forcer_mot_de_passe()
 
+    @app.before_request
+    def espace_reserve():
+        """Un élève n'entre pas dans l'espace modération, administration ou propriétaire."""
+        from utils.access import garde_espaces
+
+        return garde_espaces()
+
     @jwt.unauthorized_loader
     def missing_token(reason):
         if wants_html():

@@ -28,13 +28,14 @@ preciser("Présentation", "Le site en une minute", [
 ]);
 
 preciser("Présentation", "Les quatre rôles", [
-  ["user", "Élève. Publie, modifie et supprime ses fiches, étoile, commente, voit son audit."],
+  ["user", "Élève. Publie, modifie et supprime ses fiches, étoile, commente, voit son audit. N'ouvre pas la modération."],
   ["moderator", "Corrige toute fiche, suspend un élève, cherche les comptes. Ne change pas les rôles."],
   ["admin", "Comme le modérateur, plus le changement de rôle et la suspension d'un modérateur."],
   ["owner", "Un seul. Audit du site, suspension du site, et les droits d'administration."]
 ], [
   "Le jeton ne contient que l'identifiant du compte.",
   "Chaque page relit le rôle. Un changement ou un ban s'applique tout de suite.",
+  "garde_espaces renvoie un élève qui ouvre /moderator, /admin ou /owner vers son tableau de bord.",
   "Personne ne peut s'attribuer owner depuis une page."
 ]);
 
@@ -116,16 +117,16 @@ preciser("static/modifier.js", "Formulaire de modification", [
 ]);
 
 preciser("auth/static/login.js", "Formulaire de connexion", [
-  ["config.next", "Chemin interne déjà nettoyé. Défaut /accueil."],
+  ["config.next", "Chemin interne déjà nettoyé. Défaut /accueil. Il est envoyé au serveur, qui le refuse si le rôle ne peut pas l'ouvrir."],
   ["formulaire.username", "Identifiant, espaces de bords retirés avant l'envoi."],
   ["formulaire.password", "Mot de passe, envoyé tel quel dans le JSON, jamais dans l'URL."],
-  ["reponse.data.home", "Page d'arrivée du rôle, ou /auth/mot-de-passe."],
-  ["reponse.data.must_change_password", "Si vrai, next est ignoré."]
+  ["reponse.data.home", "Page décidée par le serveur : espace du rôle, ou next s'il est permis, ou /auth/mot-de-passe."],
+  ["reponse.data.must_change_password", "Si vrai, la page part vers /auth/mot-de-passe et ignore home."]
 ], [
   "Si /auth/me dit qu'un compte est déjà là et doit changer de mot de passe, la page part vers /auth/mot-de-passe.",
-  "Sinon un compte déjà là part vers next ou vers son espace.",
-  "Le submit poste { username, password } vers /auth/login.",
-  "Le bouton est désactivé pendant l'attente.",
+  "Sinon un compte déjà là part vers destinationSure(rôle, next), jamais vers l'espace d'un autre rôle.",
+  "Le submit poste { username, password, next } vers /auth/login.",
+  "Après succès, le navigateur va vers reponse.data.home.",
   "Une erreur affiche reponse.data.error dans #statut."
 ]);
 
@@ -771,6 +772,87 @@ preciser("static/style.css", "mouvement réduit", [
   ["scroll-behavior", "auto, pas de défilement doux."]
 ], [
   "Si le visiteur demande moins de mouvement, les cartes, menus, onglets, barres et l'anneau apparaissent déjà en place."
+]);
+
+preciser("utils/access.py", "chemin_autorise", [
+  ["/owner", "Seulement le propriétaire."],
+  ["/admin", "Administrateur et propriétaire."],
+  ["/moderator", "Modérateur, administrateur et propriétaire."],
+  ["/users", "Tout compte connecté, y compris l'élève."],
+  ["autre chemin", "Page publique : accueil, fiches, téléchargement, pages légales."]
+], [
+  "Refuse un chemin qui n'est pas une adresse interne.",
+  "Compare le début du chemin au rôle.",
+  "Renvoie vrai ou faux. destination_sure et garde_espaces s'en servent."
+]);
+
+preciser("utils/files.py", "remove_file", [
+  ["acteur", "Personne connectée. Ce n'est pas l'auteur annoncé par un formulaire."],
+  ["file_id", "UUID de la fiche."],
+  ["owner", "Compte retrouvé par owner_of à partir du JSON et de ses envois."],
+  ["peut_gerer_fiche", "Faux si un élève tente la fiche de quelqu'un d'autre."]
+], [
+  "Refuse un identifiant qui n'est pas un UUID.",
+  "Retrouve l'auteur. S'il manque, renvoie son erreur.",
+  "Refuse si peut_gerer_fiche est faux : 403 Accès refusé.",
+  "Supprime les étoiles et les commentaires, retire la fiche des envois, puis efface le JSON et le document."
+]);
+
+preciser("utils/files.py", "update_file", [
+  ["owner", "Auteur enregistré de la fiche. La route élève passe le compte connecté. La route équipe passe l'auteur retrouvé."],
+  ["acteur", "Personne connectée. peut_gerer_fiche(acteur, owner) doit être vrai."],
+  ["file_id", "UUID de la fiche."]
+], [
+  "Refuse si l'acteur ne peut pas gérer la fiche de cet auteur.",
+  "Refuse si la fiche n'est pas dans les envois de owner.",
+  "Enregistre le texte et, s'il y en a un, le nouveau fichier.",
+  "L'auteur affiché reste owner.username. Le suivi de commentaire est crédité à acteur."
+]);
+
+preciser("static/staff.js", "demarrer", [
+  ["prefixe", "data-prefix de la page : /admin ou /moderator. Toute autre valeur renvoie vers l'espace élève."],
+  ["role", "Lu avant l'appel, dans compte-connu. user est refusé."]
+], [
+  "Ne s'exécute pas pour un élève : la page part vers /users/dashboard.",
+  "Branche la recherche, le menu de cours et les boutons Modifier et Supprimer.",
+  "Le clic est encore contrôlé par le serveur."
+]);
+
+preciser("utils/access.py", "peut_gerer_fiche", [
+  ["acteur", "Compte connecté qui demande à modifier ou supprimer."],
+  ["proprietaire", "Compte auteur de la fiche, celui qui l'a envoyée."]
+], [
+  "Un compte suspendu ne gère rien.",
+  "Le même compte gère sa propre fiche.",
+  "Modérateur, administrateur et propriétaire gèrent les fiches des autres.",
+  "Un élève qui n'est pas l'auteur reçoit faux."
+]);
+
+preciser("utils/access.py", "garde_espaces", [
+  ["chemin", "Adresse demandée. Seuls /users, /moderator, /admin et /owner sont contrôlés ici."],
+  ["user", "Compte du cookie, ou rien si personne n'est connecté."]
+], [
+  "Sans session, la vue décide ensuite (souvent 401).",
+  "Si le rôle n'a pas cet espace, une page HTML est renvoyée vers son accueil.",
+  "Un appel JSON reçoit 403."
+]);
+
+preciser("utils/access.py", "destination_sure", [
+  ["role", "user, moderator, admin ou owner."],
+  ["chemin", "next demandé par le formulaire. Vide, /accueil ou une page interdite sont ignorés."]
+], [
+  "Renvoie le chemin s'il est permis.",
+  "Sinon renvoie l'espace du rôle."
+]);
+
+preciser("static/common.js", "destinationSure", [
+  ["role", "Rôle renvoyé par /auth/me ou par la connexion."],
+  ["chemin", "Paramètre next de la page de connexion."]
+], [
+  "Refuse /owner à qui n'est pas propriétaire.",
+  "Refuse /admin à l'élève et au modérateur.",
+  "Refuse /moderator à l'élève.",
+  "Sinon renvoie le chemin, ou l'espace du rôle si le chemin est vide."
 ]);
 
 preciser("static/common.js", "monterRechercheFiches", [

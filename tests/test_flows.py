@@ -383,6 +383,60 @@ def verifier_social(client_owner):
         verifier(variable in script_install, f"{variable} absent du script d'installation")
 
 
+def verifier_droits():
+    """Un élève n'ouvre pas l'espace équipe et ne retire pas la fiche d'un autre."""
+    eleve = app.test_client()
+    modo = app.test_client()
+    html = {"Accept": "text/html"}
+    entete_modo = connecter(modo, "moderateur", "MotDePasse-Test-9")
+    envoi = modo.post(
+        "/upload/Mathematiques/1ere/specialite",
+        data={
+            "title": "Fiche reservee equipe",
+            "desc": "Un eleve ne doit pas pouvoir la retirer.",
+            "author": "eleve",
+            "file": (io.BytesIO(b"reserve"), "reserve.txt"),
+        },
+        headers=entete_modo,
+    )
+    verifier(envoi.status_code == 201, envoi.get_json())
+    meta = envoi.get_json()["metadata"]
+    file_id = meta["id"]
+    suivre(Path("matiere/Mathematiques/1ere/specialite") / f"{file_id}.json")
+    suivre(Path("uploads") / meta["filename"])
+    verifier(meta["author"] == "moderateur", "l'auteur annoncé par le formulaire a été accepté")
+
+    entree = eleve.post(
+        "/auth/login",
+        json={"username": "eleve", "password": "MotDePasse-Test-9", "next": "/moderator/dashboard"},
+    )
+    verifier(entree.status_code == 200, entree.get_json())
+    verifier(entree.get_json()["home"] == "/users/dashboard", entree.get_json())
+    entete_eleve = csrf(eleve)
+    for adresse in ("/moderator/dashboard", "/admin/dashboard", "/owner/audit", "/moderator/comptes-page"):
+        page = eleve.get(adresse, headers=html)
+        verifier(page.status_code == 302 and page.location.endswith("/users/dashboard"), f"{adresse} -> {page.location}")
+        verifier("Espace modération" not in page.get_data(as_text=True), adresse)
+    refus = eleve.delete(f"/users/dashboard/delete/{file_id}", headers=entete_eleve)
+    verifier(refus.status_code == 403, refus.get_json())
+    refus = eleve.delete(f"/moderator/dashboard/delete/{file_id}", headers=entete_eleve)
+    verifier(refus.status_code == 403, refus.get_json())
+    refus = eleve.delete(f"/admin/dashboard/delete/{file_id}", headers=entete_eleve)
+    verifier(refus.status_code == 403, refus.get_json())
+    refus = eleve.post(
+        f"/moderator/dashboard/modify/save/{file_id}",
+        data={"title": "pirate", "desc": "pirate", "matiere": "Mathematiques", "classe": "1ere", "specialite": "specialite"},
+        headers=entete_eleve,
+    )
+    verifier(refus.status_code == 403, refus.get_json())
+    formulaire = eleve.get(f"/users/dashboard/modify/{file_id}", headers=html)
+    verifier(formulaire.status_code in (302, 403, 404), formulaire.status_code)
+
+    retrait = modo.delete(f"/moderator/dashboard/delete/{file_id}", headers=entete_modo)
+    verifier(retrait.status_code == 200, retrait.get_json())
+    verifier(not (Path("uploads") / meta["filename"]).exists(), "la fiche de l'équipe est restée")
+
+
 def verifier_mot_de_passe():
     """Première connexion bloquée tant que le mot de passe n'est pas choisi, puis changement libre."""
     with app.app_context():
@@ -709,6 +763,7 @@ def scenario():
     )
     client.post("/auth/logout", headers=entete_owner)
 
+    verifier_droits()
     verifier_mot_de_passe()
 
     _ATTEMPTS.clear()
