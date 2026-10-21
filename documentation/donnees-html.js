@@ -67,7 +67,3 @@ ajouter("html", "templates/legal/cookies.html", "page", "Gestion des cookies", "
 ajouter("html", "templates/legal/licences.html", "page", "Licences", "templates/legal/licences.html",
   "Licences des bibliothèques du serveur. Les fiches restent aux auteurs.",
   "Flask, Werkzeug et Flask-SQLAlchemy en BSD à trois clauses. SQLAlchemy, Flask-JWT-Extended et Gunicorn en MIT. Requests en Apache 2.0. Pas de script sur cette page.");
-
-ajouter("html", "documentation/index.html", "page", "Page de cette documentation", "documentation/index.html",
-  "Le fichier ouvert dans le navigateur, sans le site Flask.",
-  "En-tête, recherche, pastilles de langage, sommaire et zone de lecture. Changer de fiche fait monter le nouveau texte. Les scripts donnees-*.js, precisions.js, sources.js, coloration.js et menu.js sont dans la page. Aucun n'appelle l'application. Un réglage système qui demande moins de mouvement coupe cette animation.");

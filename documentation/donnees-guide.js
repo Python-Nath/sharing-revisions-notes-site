@@ -77,7 +77,7 @@ ajouter(
   "Présentation",
   "couleurs",
   "Légende des couleurs",
-  "gris, bleu, ambre, vert, violet",
+  "gris, bleu, ambre, vert, violet, cuivre",
   "Chaque langage a une couleur, dans le menu et sur la fiche.",
-  "Gris encre : la présentation, pour comprendre avant de lire le code.\nBleu : Python, le serveur, les droits, les fichiers.\nAmbre : JavaScript, ce que le navigateur affiche et envoie.\nVert : HTML, la structure des pages.\nViolet : CSS, les couleurs et la mise en page du site lui-même.\n\nLe site des élèves utilise d'autres teintes : papier #f4efe4, encre #1c2430, forêt #1d6b4f, danger #8d2f2f, focus #b86b12. Elles sont décrites dans la partie CSS."
+  "Gris encre : la présentation, pour comprendre avant de lire le code.\nBleu : Python, le serveur, les droits, les fichiers.\nAmbre : JavaScript, ce que le navigateur affiche et envoie.\nVert : HTML, la structure des pages.\nViolet : CSS du site, le fichier static/style.css, les couleurs et la mise en page des élèves.\nCuivre : le dossier documentation. Son HTML, son JavaScript et son CSS, documentation/style.css, ne sont pas ceux du site.\n\nLe site des élèves utilise d'autres teintes : papier #f4efe4, encre #1c2430, forêt #1d6b4f, danger #8d2f2f, focus #b86b12. Elles sont décrites dans la pastille CSS du site."
 );

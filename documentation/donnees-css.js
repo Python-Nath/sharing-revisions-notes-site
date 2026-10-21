@@ -1,4 +1,6 @@
-/* Règles CSS du site des élèves, pas de cette documentation. */
+/* Règles CSS du site des élèves, fichier static/style.css.
+   Le CSS de ce dossier est dans documentation/style.css et porte la pastille
+   « Dossier documentation », pas « CSS du site ». */
 
 ajouter("css", "static/style.css", "variables", ":root", ":root",
   "Les couleurs du thème papier et encre.",

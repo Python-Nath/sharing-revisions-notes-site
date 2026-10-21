@@ -84,7 +84,8 @@ preciser("Présentation", "Légende des couleurs", [
   ["Python", "Bleu #1d4e89."],
   ["JavaScript", "Ambre #8a4b08."],
   ["HTML", "Vert #1d6b4f."],
-  ["CSS", "Violet #6b3fa0."]
+  ["CSS du site", "Violet #6b3fa0. Uniquement static/style.css."],
+  ["Dossier documentation", "Cuivre #8c3d2f. HTML, JavaScript et CSS de ce dossier, dont documentation/style.css."]
 ], [
   "La pastille enfoncée prend la couleur du langage et un texte blanc.",
   "Chaque nom du menu a une barre gauche de la même couleur.",

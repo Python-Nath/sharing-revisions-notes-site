@@ -6,7 +6,8 @@
     python: { texte: "#1d4e89", fond: "#e7f0fa", nom: "Python" },
     javascript: { texte: "#8a4b08", fond: "#fbf0dc", nom: "JavaScript" },
     html: { texte: "#1d6b4f", fond: "#e5f4ec", nom: "HTML" },
-    css: { texte: "#6b3fa0", fond: "#f3eafa", nom: "CSS" }
+    css: { texte: "#6b3fa0", fond: "#f3eafa", nom: "CSS du site" },
+    documentation: { texte: "#8c3d2f", fond: "#f8ece6", nom: "Dossier documentation" }
   };
 
   var docs = (window.DOCS || []).map(function (entree, index) {
