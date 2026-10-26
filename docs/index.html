@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Documentation — Fiches de révision</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="passer" href="#lecture">Aller au texte</a>
+  <header class="entete">
+    <div class="marque">
+      <p class="sur">Documentation locale</p>
+      <h1>Fiches de révision</h1>
+    </div>
+    <form id="form-recherche" role="search">
+      <label for="recherche">Rechercher</label>
+      <input id="recherche" type="search" placeholder="Fonction, fichier, rôle, étoile, commentaire…" autocomplete="off">
+    </form>
+  </header>
+
+  <div class="filtres" id="filtres" aria-label="Filtrer par langage"></div>
+
+  <div class="cadre">
+    <nav class="menu" id="menu" aria-label="Sommaire"></nav>
+    <article class="lecture" id="lecture" tabindex="-1"></article>
+  </div>
+
+  <script src="donnees-guide.js"></script>
+  <script src="donnees-python.js"></script>
+  <script src="donnees-javascript.js"></script>
+  <script src="donnees-html.js"></script>
+  <script src="donnees-css.js"></script>
+  <script src="donnees-documentation.js"></script>
+  <script src="precisions.js"></script>
+  <script src="precisions-suite.js"></script>
+  <script src="precisions-documentation.js"></script>
+  <script src="sources.js"></script>
+  <script src="coloration.js"></script>
+  <script src="menu.js"></script>
+</body>
+</html>
