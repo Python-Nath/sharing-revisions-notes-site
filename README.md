@@ -2,6 +2,8 @@
 
 Site de fiches de révision entre élèves. On choisit une matière, une classe et une spécialité, on lit les fiches, on les télécharge, et un compte permet d'en publier.
 
+[Documentation](https://python-nath.github.io/sharing-revisions-notes-site/#guide-0)
+
 ## Fonctions
 
 - Cours rangés en `matiere / classe / spécialité`.
@@ -80,5 +82,3 @@ Ouvrir `documentation/index.html`. Le menu sépare la présentation, Python, Jav
 - `templates/`, `static/` : pages, style, scripts.
 - `matiere/`, `uploads/` : fiches.
 - `init_users.py`, `make_structure.py`, `init-server.sh`, `clean.sh`.
-
-##[Documentation](https://python-nath.github.io/sharing-revisions-notes-site/#guide-0)
