@@ -80,3 +80,5 @@ Ouvrir `documentation/index.html`. Le menu sépare la présentation, Python, Jav
 - `templates/`, `static/` : pages, style, scripts.
 - `matiere/`, `uploads/` : fiches.
 - `init_users.py`, `make_structure.py`, `init-server.sh`, `clean.sh`.
+
+#[Documentation](https://python-nath.github.io/sharing-revisions-notes-site/#guide-0)
